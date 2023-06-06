@@ -28,7 +28,8 @@ import skimage.draw
 import cv2
 from mrcnn.visualize import display_instances
 import matplotlib.pyplot as plt
-from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import EarlyStopping
+
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -48,7 +49,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 2
+EPOCHS = 100
 
 class CustomConfig(Config):
     """Configuration for training on the dataset.
@@ -238,8 +239,9 @@ def train(model):
     dataset_val.load_custom(args.dataset, "val")
     dataset_val.prepare()
 
-    # tensorflow callback
-    tensorboard_callback = TensorBoard(log_dir=DEFAULT_LOGS_DIR)
+
+    # Create an EarlyStopping callback
+    early_stopping_callback = EarlyStopping(patience=5, restore_best_weights=True)
 
     # *** This training schedule is an example. Update to your needs ***
     # Since we're using a very small dataset, and starting from
@@ -250,7 +252,7 @@ def train(model):
                 learning_rate=config.LEARNING_RATE,
                 epochs=EPOCHS,
                 layers='heads',
-                custom_callbacks=tensorboard_callback)
+                custom_callbacks=early_stopping_callback)
 
 
 def color_splash(image, mask):
