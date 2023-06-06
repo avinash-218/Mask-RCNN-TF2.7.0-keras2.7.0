@@ -1,6 +1,6 @@
 """
 Mask R-CNN
-Train on the toy bottle dataset and implement color splash effect.
+Train on the floor plan dataset and implement color splash effect.
 Copyright (c) 2018 Matterport, Inc.
 Licensed under the MIT License (see LICENSE for details)
 Written by Waleed Abdulla
@@ -28,6 +28,7 @@ import skimage.draw
 import cv2
 from mrcnn.visualize import display_instances
 import matplotlib.pyplot as plt
+from tensorflow.keras.callbacks import TensorBoard
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -58,17 +59,31 @@ class CustomConfig(Config):
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
+    # BATCH_SIZE = IMAGES_PER_GPU * GPU_COUNT ; 1 * 1 = 1
     IMAGES_PER_GPU = 1
+
+    # Number of training steps per epoch
+    STEPS_PER_EPOCH = 1000
+
+    BACKBONE = "resnet50"
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 16  # Background + furniture objects
 
-    # Number of training steps per epoch
-    STEPS_PER_EPOCH = 1
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 512
 
-    # Skip detections with < 90% confidence
-    DETECTION_MIN_CONFIDENCE = 0.9
+    # Skip detections with < 50% confidence
+    DETECTION_MIN_CONFIDENCE = 0.5
 
+    LEARNING_RATE = 0.001
+    LEARNING_MOMENTUM = 0.9
+
+    # Weight decay regularization
+    WEIGHT_DECAY = 0.0001
+    
+    # Gradient norm clipping
+    GRADIENT_CLIP_NORM = 5.0
 
 ############################################################
 #  Dataset
@@ -160,7 +175,8 @@ class CustomDataset(utils.Dataset):
                 "object",  ## for a single class just add the name here
                 image_id=image_id,  # use file name as a unique image id
                 path=image_path,
-                width=width, height=height,
+                width=width,
+                height=height,
                 polygons=polygons,
                 num_ids=num_ids)
 
@@ -185,6 +201,7 @@ class CustomDataset(utils.Dataset):
         info = self.image_info[image_id]
         if info["source"] != "object":
             return super(self.__class__, self).load_mask(image_id)
+            
         num_ids = info['num_ids']
         mask = np.zeros([info["height"], info["width"], len(info["polygons"])],
                         dtype=np.uint8)
@@ -221,6 +238,9 @@ def train(model):
     dataset_val.load_custom(args.dataset, "val")
     dataset_val.prepare()
 
+    # tensorflow callback
+    tensorboard_callback = TensorBoard(log_dir=DEFAULT_LOGS_DIR)
+
     # *** This training schedule is an example. Update to your needs ***
     # Since we're using a very small dataset, and starting from
     # COCO trained weights, we don't need to train too long. Also,
@@ -229,7 +249,8 @@ def train(model):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=EPOCHS,
-                layers='heads')
+                layers='heads',
+                custom_callbacks=tensorboard_callback)
 
 
 def color_splash(image, mask):
