@@ -2188,8 +2188,7 @@ class MaskRCNN(object):
         self.keras_model.compile(
             optimizer=optimizer,
             loss=[None] * len(self.keras_model.outputs),
-            metrics=[utils.compute_accuracy, utils.compute_precision, utils.compute_recall,
-                    utils.compute_f1_score, utils.compute_iou, utils.compute_ap])
+            metrics=[utils.compute_ap_range])
 
         # Add metrics for losses
         for name in loss_names:
@@ -2273,7 +2272,7 @@ class MaskRCNN(object):
             self.config.NAME.lower(), now))
 
         # Path to save after each epoch. Include placeholders that get filled by Keras.
-        self.checkpoint_path = os.path.join(self.log_dir, "mask_rcnn_{}.h5".format(
+        self.checkpoint_path = os.path.join(self.log_dir, "mask_rcnn_{}_*epoch*.h5".format(
             self.config.NAME.lower()))
         self.checkpoint_path = self.checkpoint_path.replace(
             "*epoch*", "{epoch:04d}")
@@ -2341,7 +2340,7 @@ class MaskRCNN(object):
         callbacks = [
             keras.callbacks.TensorBoard(log_dir=self.log_dir,
                                         histogram_freq=0, write_graph=False, write_images=False),
-            keras.callbacks.ModelCheckpoint(self.checkpoint_path, save_best_only=True
+            keras.callbacks.ModelCheckpoint(self.checkpoint_path, save_best_only=True,
                                             verbose=0, save_weights_only=True),
         ]
 

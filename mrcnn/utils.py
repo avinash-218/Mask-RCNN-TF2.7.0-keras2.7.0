@@ -911,7 +911,7 @@ def resize(image, output_shape, order=1, mode='constant', cval=0, clip=True,
 
 ## Custom Functions
 
-def compute_accuracy(pred_masks, gt_masks):
+def compute_accuracy1(pred_masks, gt_masks):
     """Compute the accuracy of the predicted masks compared to the ground truth masks.
 
     pred_masks: [N, H, W] predicted binary masks
@@ -926,7 +926,7 @@ def compute_accuracy(pred_masks, gt_masks):
     return accuracy
 
 
-def compute_precision(pred_masks, gt_masks):
+def compute_precision1(pred_masks, gt_masks):
     """Compute the precision of the predicted masks compared to the ground truth masks.
 
     pred_masks: [N, H, W] predicted binary masks
@@ -945,7 +945,7 @@ def compute_precision(pred_masks, gt_masks):
     return precision
 
 
-def compute_recall(pred_masks, gt_masks):
+def compute_recall1(pred_masks, gt_masks):
     """Compute the recall of the predicted masks compared to the ground truth masks.
 
     pred_masks: [N, H, W] predicted binary masks
@@ -964,7 +964,7 @@ def compute_recall(pred_masks, gt_masks):
     return recall
 
 
-def compute_f1_score(pred_masks, gt_masks):
+def compute_f1_score1(pred_masks, gt_masks):
     """Compute the F1 score of the predicted masks compared to the ground truth masks.
 
     pred_masks: [N, H, W] predicted binary masks
@@ -978,7 +978,7 @@ def compute_f1_score(pred_masks, gt_masks):
     return f1_score
 
 
-def compute_iou(pred_boxes, gt_boxes):
+def compute_iou1(pred_boxes, gt_boxes):
     """Compute the Intersection over Union (IOU) between predicted boxes and ground truth boxes.
 
     pred_boxes: [N, 4] predicted boxes in the format [y1, x1, y2, x2]
@@ -1001,7 +1001,7 @@ def compute_iou(pred_boxes, gt_boxes):
     return iou
 
 
-def compute_ap(pred_boxes, gt_boxes, iou_threshold=0.5):
+def compute_ap1(pred_boxes, gt_boxes, iou_threshold=0.5):
     """Compute the Average Precision (AP) at a given IoU threshold.
 
     pred_boxes: [N, 4] predicted boxes in the format [y1, x1, y2, x2]

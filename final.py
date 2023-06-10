@@ -52,7 +52,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 100
+EPOCHS = 1
 
 class CustomConfig(Config):
     """Configuration for training on the dataset.
@@ -64,10 +64,10 @@ class CustomConfig(Config):
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
     # BATCH_SIZE = IMAGES_PER_GPU * GPU_COUNT ; 1 * 1 = 1
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 2
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 10
 
     BACKBONE = "resnet101"
 
