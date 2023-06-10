@@ -30,6 +30,9 @@ from mrcnn.visualize import display_instances
 import matplotlib.pyplot as plt
 from tensorflow.keras.callbacks import EarlyStopping
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -64,15 +67,23 @@ class CustomConfig(Config):
     IMAGES_PER_GPU = 1
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 1000
+    STEPS_PER_EPOCH = 100
 
-    BACKBONE = "resnet50"
+    BACKBONE = "resnet101"
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 16  # Background + furniture objects
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
+
+    BACKBONE_STRIDES = [4, 8, 16, 32, 64]
+
+    # Size of the fully-connected layers in the classification graph
+    FPN_CLASSIF_FC_LAYERS_SIZE = 1024
+
+    # Size of the top-down layers used to build the feature pyramid
+    TOP_DOWN_PYRAMID_SIZE = 256
 
     # Skip detections with < 50% confidence
     DETECTION_MIN_CONFIDENCE = 0.5
@@ -208,9 +219,9 @@ class CustomDataset(utils.Dataset):
                         dtype=np.uint8)
         for i, p in enumerate(info["polygons"]):
             # Get indexes of pixels inside the polygon and set them to 1
-        	rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
+            rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
 
-        	mask[rr, cc, i] = 1
+            mask[rr, cc, i] = 1
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
@@ -252,7 +263,7 @@ def train(model):
                 learning_rate=config.LEARNING_RATE,
                 epochs=EPOCHS,
                 layers='heads',
-                custom_callbacks=early_stopping_callback)
+                custom_callbacks=[early_stopping_callback])
 
 
 def color_splash(image, mask):
