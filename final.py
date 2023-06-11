@@ -50,6 +50,7 @@ ROOT_DIR = os.path.abspath("../../")
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils
+import evaluate as eval
 
 # Path to trained weights file
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
@@ -164,7 +165,6 @@ class CustomDataset(utils.Dataset):
 
         images = data['images']
         annotations = data['annotations']
-        categories = data['categories']
 
         annotation_cnt = 0
         len_annotations = len(annotations)
@@ -363,11 +363,10 @@ class CustomWandbCallback(Callback):
     def on_epoch_end(self, epoch, logs=None):
         wandb.log(logs)  # Log the metrics to W&B
 
-############################################################
-#  Training
-############################################################
-
 if __name__ == '__main__':
+    ############################################################
+    #  Training
+    ############################################################
     import argparse
 
     # Parse command line arguments
@@ -467,5 +466,49 @@ if __name__ == '__main__':
     else:
         print("'{}' is not recognized. "
               "Use 'train' or 'splash'".format(args.command))
+        
+    ############################################################
+    #  Evaluation
+    ############################################################
+    dataset_path = '../dataset/'
+    log_path = '../logs/'
+
+    # Training dataset.
+    dataset_train = CustomDataset()
+    dataset_train.load_custom(args.dataset, "train")
+    dataset_train.prepare()
+
+    # Validation dataset
+    dataset_val = CustomDataset()
+    dataset_val.load_custom(args.dataset, "val")
+    dataset_val.prepare()
+
+    # Test dataset
+    dataset_test = CustomDataset()
+    dataset_test.load_custom(args.dataset, "test")
+    dataset_test.prepare()
+
+    # create config
+    config = eval.PredictionConfig()
+
+    # define the model
+    model = modellib.MaskRCNN(mode="inference", model_dir=log_path, config=config)
+
+    # load model weights
+    model.load_weights('furniture_segment.h5', by_name=True)
+
+    # evaluate model on training dataset
+    train_mAP = eval.evaluate_model(dataset_train, model, config)
+    print("Train mAP: %.3f" % train_mAP)
+
+    # evaluate model on test dataset
+    val_mAP = eval.evaluate_model(dataset_val, model, config)
+    print("Val mAP: %.3f" % val_mAP)
+
+    # evaluate model on test dataset
+    test_mAP = eval.evaluate_model(dataset_test, model, config)
+    print("Test mAP: %.3f" % test_mAP)
+
+    wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP})
 
     wandb.finish()
