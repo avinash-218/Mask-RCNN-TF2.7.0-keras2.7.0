@@ -1,0 +1,214 @@
+wandb_version: 1
+
+BACKBONE:
+  desc: null
+  value: resnet101
+BACKBONE_STRIDES:
+  desc: null
+  value:
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+BATCH_SIZE:
+  desc: null
+  value: 2
+BBOX_STD_DEV:
+  desc: null
+  value:
+  - 0.1
+  - 0.1
+  - 0.2
+  - 0.2
+COMPUTE_BACKBONE_SHAPE:
+  desc: null
+  value: null
+DETECTION_MAX_INSTANCES:
+  desc: null
+  value: 35
+DETECTION_MIN_CONFIDENCE:
+  desc: null
+  value: 0.5
+DETECTION_NMS_THRESHOLD:
+  desc: null
+  value: 0.3
+FPN_CLASSIF_FC_LAYERS_SIZE:
+  desc: null
+  value: 1024
+GPU_COUNT:
+  desc: null
+  value: 1
+GRADIENT_CLIP_NORM:
+  desc: null
+  value: 5.0
+IMAGES_PER_GPU:
+  desc: null
+  value: 2
+IMAGE_CHANNEL_COUNT:
+  desc: null
+  value: 3
+IMAGE_MAX_DIM:
+  desc: null
+  value: 512
+IMAGE_META_SIZE:
+  desc: null
+  value: 29
+IMAGE_MIN_DIM:
+  desc: null
+  value: 512
+IMAGE_MIN_SCALE:
+  desc: null
+  value: 0
+IMAGE_RESIZE_MODE:
+  desc: null
+  value: square
+IMAGE_SHAPE:
+  desc: null
+  value:
+  - 512
+  - 512
+  - 3
+LEARNING_MOMENTUM:
+  desc: null
+  value: 0.9
+LEARNING_RATE:
+  desc: null
+  value: 0.001
+LOSS_WEIGHTS:
+  desc: null
+  value:
+    rpn_class_loss: 1.0
+    rpn_bbox_loss: 1.0
+    mrcnn_class_loss: 1.0
+    mrcnn_bbox_loss: 1.0
+    mrcnn_mask_loss: 1.0
+MASK_POOL_SIZE:
+  desc: null
+  value: 14
+MASK_SHAPE:
+  desc: null
+  value:
+  - 28
+  - 28
+MAX_GT_INSTANCES:
+  desc: null
+  value: 100
+MEAN_PIXEL:
+  desc: null
+  value:
+  - 123.7
+  - 116.8
+  - 103.9
+MINI_MASK_SHAPE:
+  desc: null
+  value:
+  - 56
+  - 56
+NAME:
+  desc: null
+  value: object
+NUM_CLASSES:
+  desc: null
+  value: 17
+POOL_SIZE:
+  desc: null
+  value: 7
+POST_NMS_ROIS_INFERENCE:
+  desc: null
+  value: 1000
+POST_NMS_ROIS_TRAINING:
+  desc: null
+  value: 2000
+PRE_NMS_LIMIT:
+  desc: null
+  value: 6000
+ROI_POSITIVE_RATIO:
+  desc: null
+  value: 0.33
+RPN_ANCHOR_RATIOS:
+  desc: null
+  value:
+  - 0.5
+  - 1
+  - 2
+RPN_ANCHOR_SCALES:
+  desc: null
+  value:
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+RPN_ANCHOR_STRIDE:
+  desc: null
+  value: 1
+RPN_BBOX_STD_DEV:
+  desc: null
+  value:
+  - 0.1
+  - 0.1
+  - 0.2
+  - 0.2
+RPN_NMS_THRESHOLD:
+  desc: null
+  value: 0.7
+RPN_TRAIN_ANCHORS_PER_IMAGE:
+  desc: null
+  value: 256
+STEPS_PER_EPOCH:
+  desc: null
+  value: 10
+TOP_DOWN_PYRAMID_SIZE:
+  desc: null
+  value: 256
+TRAIN_BN:
+  desc: null
+  value: false
+TRAIN_ROIS_PER_IMAGE:
+  desc: null
+  value: 200
+USE_MINI_MASK:
+  desc: null
+  value: false
+USE_RPN_ROIS:
+  desc: null
+  value: true
+VALIDATION_STEPS:
+  desc: null
+  value: 10
+WEIGHT_DECAY:
+  desc: null
+  value: 0.0001
+Epochs:
+  desc: null
+  value: 2
+_wandb:
+  desc: null
+  value:
+    code_path: code/final.py
+    python_version: 3.8.10
+    cli_version: 0.15.4
+    framework: keras
+    is_jupyter_run: false
+    is_kaggle_kernel: true
+    start_time: 1686451793.82149
+    t:
+      1:
+      - 2
+      - 3
+      - 55
+      2:
+      - 2
+      - 3
+      - 55
+      3:
+      - 13
+      - 16
+      - 23
+      4: 3.8.10
+      5: 0.15.4
+      8:
+      - 2
+      - 3
+      - 5

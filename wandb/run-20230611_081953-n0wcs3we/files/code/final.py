@@ -35,7 +35,7 @@ from wandb.keras import WandbCallback
 import warnings
 warnings.filterwarnings("ignore")
 
-wandb.login(key='')
+wandb.login(key='f5737f3f12d24772aa679fa867d2a7a7efe6664f')
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
