@@ -28,14 +28,20 @@ import skimage.draw
 import cv2
 from mrcnn.visualize import display_instances
 import matplotlib.pyplot as plt
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, Callback
 import wandb
 from wandb.keras import WandbCallback
-
+import json
 import warnings
 warnings.filterwarnings("ignore")
 
-wandb.login(key='')
+# Read the JSON configuration file
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
+
+# Retrieve the Wandb API key
+wandb_api_key = config['wandb_api_key']
+wandb.login(key=wandb_api_key)
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -262,18 +268,13 @@ def train(model):
 
     # Create an EarlyStopping callback
     early_stopping_callback = EarlyStopping(patience=5, restore_best_weights=True)
+    
+    config = CustomConfig()
+    config_dict = config.to_dict()
+    config_dict['Epochs'] = EPOCHS
 
     # Create an Wandb Callback
-    wandb_callback = WandbCallback(save_model=True,
-                          save_graph=True,
-                          save_weights_only=True,
-                          log_weights=True,
-                          log_gradients=True,
-                          training_data=dataset_train,
-                          validation_data=dataset_val,
-                          validation_steps = VAL_STEPS,
-                          predictions = 8,
-                          input_type='segmentation_mask')
+    wandb_callback = CustomWandbCallback()
 
     # *** This training schedule is an example. Update to your needs ***
     # Since we're using a very small dataset, and starting from
@@ -357,6 +358,11 @@ def detect_and_color_splash(model, image_path=None, video_path=None):
         vwriter.release()
     print("Saved to ", file_name)
 
+
+class CustomWandbCallback(Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        wandb.log(logs)  # Log the metrics to W&B
+
 ############################################################
 #  Training
 ############################################################
@@ -399,7 +405,6 @@ if __name__ == '__main__':
     print("Dataset: ", args.dataset)
     print("Logs: ", args.logs)
 
-    config = None
     # Configurations
     if args.command == "train":
         config = CustomConfig()
@@ -412,15 +417,12 @@ if __name__ == '__main__':
         config = InferenceConfig()
     config.display()
 
-    config_dict = config.to_dict()
-    config_dict['Epochs'] = EPOCHS
-
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
                         group='Test',#set group name
                         name='Test1',#set run name
-                        resume=False,#resume run
-                        config=config_dict)
+                        resume=False#resume run
+                        )
 
     # Create model
     if args.command == "train":
@@ -465,3 +467,5 @@ if __name__ == '__main__':
     else:
         print("'{}' is not recognized. "
               "Use 'train' or 'splash'".format(args.command))
+
+    wandb.finish()

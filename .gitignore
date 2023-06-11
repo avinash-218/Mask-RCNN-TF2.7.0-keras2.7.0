@@ -1,3 +1,9 @@
+# API
+API.json
+
+# Wandb
+wandb/
+
 # Data files and directories common in repo root
 datasets/
 logs/
