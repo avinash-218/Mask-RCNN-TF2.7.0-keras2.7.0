@@ -499,18 +499,21 @@ if __name__ == '__main__':
     model.load_weights(model_path, by_name=True)
 
     # evaluate model on training dataset
-    train_mAP = eval.evaluate_model(dataset_train, model, config)
-    print("Train mAP: %.3f" % train_mAP)
+    train_mAP, train_mean_precision, train_mean_recall, train_mean_f1_score = eval.evaluate_model(dataset_train, model, config)
+    print("Train mAP, precision, recall, f1:", train_mAP, train_mean_precision, train_mean_recall, train_mean_f1_score)
 
     # evaluate model on test dataset
-    val_mAP = eval.evaluate_model(dataset_val, model, config)
-    print("Val mAP: %.3f" % val_mAP)
+    val_mAP, val_mean_precision, val_mean_recall, val_mean_f1_score = eval.evaluate_model(dataset_val, model, config)
+    print("Val mAP, precision, recall, f1:", val_mAP, val_mean_precision, val_mean_recall, val_mean_f1_score)
 
     # evaluate model on test dataset
-    test_mAP = eval.evaluate_model(dataset_test, model, config)
-    print("Test mAP: %.3f" % test_mAP)
+    test_mAP, test_mean_precision, test_mean_recall, test_mean_f1_score = eval.evaluate_model(dataset_test, model, config)
+    print("Test mAP, precision, recall, f1:", test_mAP, test_mean_precision, test_mean_recall, test_mean_f1_score)
 
-    wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP})
+    wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
+               "Train mean precision": train_mean_precision, "Val mean precision": val_mean_precision, "Test mean precision": test_mean_precision,
+               "Train mean recall": train_mean_recall, "Val mean recall": val_mean_recall, "Test mean recall": test_mean_recall,
+               "Train mean f1": train_mean_f1_score, "Val mean f1": val_mean_f1_score, "Test mean f1": test_mean_f1_score,})
     wandb.save(model_path)
 
     wandb.finish()

@@ -60,8 +60,43 @@ class PredictionConfig(Config):
     GRADIENT_CLIP_NORM = 5.0
 	
 # calculate the mAP for a model on a given dataset
+# def evaluate_model(dataset, model, cfg):
+#     APs = []
+
+#     for image_id in dataset.image_ids:
+#         # load image, bounding boxes and masks for the image id
+#         image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
+
+#         # convert pixel values (e.g. center)
+#         scaled_image = modellib.mold_image(image, cfg)
+
+#         # make prediction - detect return the below
+#         # rois: [N, (y1, x1, y2, x2)] detection bounding boxes
+#         # class_ids: [N] int class IDs
+#         # scores: [N] float probability scores for the class IDs
+#         # masks: [H, W, N] instance binary masks
+#         yhat = model.detect([scaled_image])
+
+#         print(yhat)
+
+#         # extract results for first sample
+#         r = yhat[0]
+
+#         # calculate statistics, including AP
+#         AP, _, _, _ = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
+        
+#         # store
+#         APs.append(AP)
+
+#     # calculate the mean AP across all images
+#     mAP = np.mean(APs)
+#     return mAP
+
 def evaluate_model(dataset, model, cfg):
-    APs = list()
+    APs = []
+    precisions = []
+    recalls = []
+    f1_scores = []
 
     for image_id in dataset.image_ids:
         # load image, bounding boxes and masks for the image id
@@ -70,18 +105,33 @@ def evaluate_model(dataset, model, cfg):
         # convert pixel values (e.g. center)
         scaled_image = modellib.mold_image(image, cfg)
 
-        # make prediction
+        # make prediction - detect returns the following:
+        # rois: [N, (y1, x1, y2, x2)] detection bounding boxes
+        # class_ids: [N] int class IDs
+        # scores: [N] float probability scores for the class IDs
+        # masks: [H, W, N] instance binary masks
         yhat = model.detect([scaled_image])
 
-        # extract results for first sample
+        print(yhat)
+
+        # extract results for the first sample
         r = yhat[0]
 
         # calculate statistics, including AP
-        AP, _, _, _ = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
-        
-        # store
-        APs.append(AP)
+        AP, precision, recall, f1_score = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
 
-    # calculate the mean AP across all images
+        print(AP, precisions, recalls, f1_scores, sep='\n\n')
+        
+        # store individual values
+        APs.append(AP)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1_scores.append(f1_score)
+
+    # calculate the mean values
     mAP = np.mean(APs)
-    return mAP
+    mean_precision = np.mean(precisions)
+    mean_recall = np.mean(recalls)
+    mean_f1_score = np.mean(f1_scores)
+
+    return mAP, mean_precision, mean_recall, mean_f1_score
