@@ -36,7 +36,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Read the JSON configuration file
-with open('config.json', 'r') as config_file:
+with open('API.json', 'r') as config_file:
     config = json.load(config_file)
 
 # Retrieve the Wandb API key
@@ -62,8 +62,8 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 2
-VAL_STEPS = 10
+EPOCHS = 1
+VAL_STEPS = 1
 
 class CustomConfig(Config):
     """Configuration for training on the dataset.
@@ -78,7 +78,7 @@ class CustomConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 10
+    STEPS_PER_EPOCH = 1
 
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
@@ -143,7 +143,7 @@ class CustomDataset(utils.Dataset):
         self.add_class("object", 16, "window2")
 
         # Train or validation dataset?
-        assert subset in ["train", "val"]
+        assert subset in ["train", "val", "test"]
         dataset_dir = os.path.join(dataset_dir, subset)
 
         # Load annotations
@@ -471,7 +471,8 @@ if __name__ == '__main__':
     #  Evaluation
     ############################################################
     dataset_path = '../dataset/'
-    log_path = '../logs/'
+    log_path = './logs/'
+    model_path = './logs/object/furniture_segment.h5'
 
     # Training dataset.
     dataset_train = CustomDataset()
@@ -495,7 +496,7 @@ if __name__ == '__main__':
     model = modellib.MaskRCNN(mode="inference", model_dir=log_path, config=config)
 
     # load model weights
-    model.load_weights('furniture_segment.h5', by_name=True)
+    model.load_weights(model_path, by_name=True)
 
     # evaluate model on training dataset
     train_mAP = eval.evaluate_model(dataset_train, model, config)
@@ -510,5 +511,6 @@ if __name__ == '__main__':
     print("Test mAP: %.3f" % test_mAP)
 
     wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP})
+    wandb.save(model_path)
 
     wandb.finish()
