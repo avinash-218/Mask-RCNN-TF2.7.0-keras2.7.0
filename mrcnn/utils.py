@@ -918,8 +918,8 @@ def compute_precision_recall_f1(pred_boxes, gt_boxes, iou=0.5):
     fp = len(pred_boxes) - tp
     fn = gt_boxes.shape[0] - tp
     
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
-    f1_score = 2 * (precision * recall) / (precision + recall)
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
     
     return precision, recall, f1_score

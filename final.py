@@ -49,7 +49,7 @@ ROOT_DIR = os.path.abspath("../../")
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
-from mrcnn import model as modellib, utils
+from mrcnn import model as modellib, utils, visualize
 import evaluate as eval
 
 # Path to trained weights file
@@ -501,14 +501,17 @@ if __name__ == '__main__':
     # evaluate model on training dataset
     train_mAP, train_mean_precision, train_mean_recall, train_mean_f1_score = eval.evaluate_model(dataset_train, model, config)
     print("Train mAP, precision, recall, f1:", train_mAP, train_mean_precision, train_mean_recall, train_mean_f1_score)
+    visualize.plot_actual_vs_predicted("Train", dataset_train, model, config, n_images=3)
 
     # evaluate model on test dataset
     val_mAP, val_mean_precision, val_mean_recall, val_mean_f1_score = eval.evaluate_model(dataset_val, model, config)
     print("Val mAP, precision, recall, f1:", val_mAP, val_mean_precision, val_mean_recall, val_mean_f1_score)
+    visualize.plot_actual_vs_predicted("Val", dataset_val, model, config, n_images=3)
 
     # evaluate model on test dataset
     test_mAP, test_mean_precision, test_mean_recall, test_mean_f1_score = eval.evaluate_model(dataset_test, model, config)
     print("Test mAP, precision, recall, f1:", test_mAP, test_mean_precision, test_mean_recall, test_mean_f1_score)
+    visualize.plot_actual_vs_predicted("Test", dataset_test, model, config, n_images=3)
 
     wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
                "Train mean precision": train_mean_precision, "Val mean precision": val_mean_precision, "Test mean precision": test_mean_precision,
@@ -517,3 +520,6 @@ if __name__ == '__main__':
     wandb.save(model_path)
 
     wandb.finish()
+
+
+# python final.py train --dataset=../dataset/ --weights=coco --logs=./logs
