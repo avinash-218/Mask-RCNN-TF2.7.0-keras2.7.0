@@ -22,6 +22,7 @@ import urllib.request
 import shutil
 import warnings
 from distutils.version import LooseVersion
+import tensorflow.keras.backend as K
 
 # URL from which to download the latest COCO trained weights
 COCO_MODEL_URL = "https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5"
@@ -108,6 +109,7 @@ def compute_overlaps_masks(masks1, masks2):
     # flatten masks and compute their areas
     masks1 = np.reshape(masks1 > .5, (-1, masks1.shape[-1])).astype(np.float32)
     masks2 = np.reshape(masks2 > .5, (-1, masks2.shape[-1])).astype(np.float32)
+
     area1 = np.sum(masks1, axis=0)
     area2 = np.sum(masks2, axis=0)
 
@@ -776,7 +778,7 @@ def compute_ap_range(gt_box, gt_class_id, gt_mask,
     return AP
 
 
-def compute_recall(pred_boxes, gt_boxes, iou):
+def compute_recall(pred_boxes, gt_boxes, iou_threshold):
     """Compute the recall at the given IoU threshold. It's an indication
     of how many GT boxes were found by the given prediction boxes.
 
@@ -787,7 +789,7 @@ def compute_recall(pred_boxes, gt_boxes, iou):
     overlaps = compute_overlaps(pred_boxes, gt_boxes)
     iou_max = np.max(overlaps, axis=1)
     iou_argmax = np.argmax(overlaps, axis=1)
-    positive_ids = np.where(iou_max >= iou)[0]
+    positive_ids = np.where(iou_max >= iou_threshold)[0]
     matched_gt_boxes = iou_argmax[positive_ids]
 
     recall = len(set(matched_gt_boxes)) / gt_boxes.shape[0]
@@ -910,9 +912,9 @@ def resize(image, output_shape, order=1, mode='constant', cval=0, clip=True,
     
 ## Custom Evaluation Metrics
 
-def compute_precision_recall_f1(pred_boxes, gt_boxes, iou=0.5):
+def compute_precision_recall_f1(pred_boxes, gt_boxes, iou_threshold=0.5):
     """Compute precision, recall, and F1 score by thresholding the IoU."""
-    recall, positive_ids = compute_recall(pred_boxes, gt_boxes, iou)
+    _, positive_ids = compute_recall(pred_boxes, gt_boxes, iou_threshold)
     
     tp = len(positive_ids)
     fp = len(pred_boxes) - tp

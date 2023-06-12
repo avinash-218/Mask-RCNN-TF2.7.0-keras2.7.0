@@ -59,11 +59,13 @@ class PredictionConfig(Config):
     # Gradient norm clipping
     GRADIENT_CLIP_NORM = 5.0
 	
-def evaluate_model(dataset, model, cfg):
+def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
     APs = []
     precisions = []
     recalls = []
     f1_scores = []
+    IOUs =[]
+    dices = []
 
     for image_id in dataset.image_ids:
         # Load image, bounding boxes, and masks for the image id
@@ -83,21 +85,29 @@ def evaluate_model(dataset, model, cfg):
         r = yhat[0]
 
         # Calculate statistics, including AP
-        AP, _, _, _ = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'])
+        AP, _, _, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'], iou_threshold=iou_threshold)
+        max_iou_per_box = np.max(overlaps, axis=1)
+        average_iou = np.mean(max_iou_per_box)
 
         # Calculate precision, recall, and F1 score
-        precision, recall, f1_score = utils.compute_precision_recall_f1(r["rois"], gt_bbox)
+        precision, recall, f1_score = utils.compute_precision_recall_f1(r["rois"], gt_bbox, iou_threshold)
+
+        dice = 2*average_iou / (average_iou + 1)
 
         # Store individual values
         APs.append(AP)
         precisions.append(precision)
         recalls.append(recall)
         f1_scores.append(f1_score)
+        IOUs.append(average_iou)
+        dices.append(dice)
 
     # Calculate the mean values
     mAP = np.mean(APs)
-    mean_precision = np.mean(precisions)
-    mean_recall = np.mean(recalls)
-    mean_f1_score = np.mean(f1_scores)
+    precision = np.mean(precisions)
+    recall = np.mean(recalls)
+    f1_score = np.mean(f1_scores)
+    iou = np.mean(IOUs)
+    dice = np.mean(dices)
 
-    return mAP, mean_precision, mean_recall, mean_f1_score
+    return mAP, precision, recall, f1_score, iou, dice

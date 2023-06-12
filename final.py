@@ -497,26 +497,29 @@ if __name__ == '__main__':
 
     # load model weights
     model.load_weights(model_path, by_name=True)
-
+        
     # evaluate model on training dataset
-    train_mAP, train_mean_precision, train_mean_recall, train_mean_f1_score = eval.evaluate_model(dataset_train, model, config)
-    print("Train mAP, precision, recall, f1:", train_mAP, train_mean_precision, train_mean_recall, train_mean_f1_score)
+    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = eval.evaluate_model(dataset_train, model, config)
+    print("Train mAP, Precision, Recall, F1, IOU, Dice:", train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice)
     visualize.plot_actual_vs_predicted("Train", dataset_train, model, config, n_images=3)
 
     # evaluate model on test dataset
-    val_mAP, val_mean_precision, val_mean_recall, val_mean_f1_score = eval.evaluate_model(dataset_val, model, config)
-    print("Val mAP, precision, recall, f1:", val_mAP, val_mean_precision, val_mean_recall, val_mean_f1_score)
+    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = eval.evaluate_model(dataset_val, model, config)
+    print("Val mAP, Precision, Recall, F1, IOU, Dice:", val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice)
     visualize.plot_actual_vs_predicted("Val", dataset_val, model, config, n_images=3)
 
     # evaluate model on test dataset
-    test_mAP, test_mean_precision, test_mean_recall, test_mean_f1_score = eval.evaluate_model(dataset_test, model, config)
-    print("Test mAP, precision, recall, f1:", test_mAP, test_mean_precision, test_mean_recall, test_mean_f1_score)
+    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = eval.evaluate_model(dataset_test, model, config)
+    print("Test mAP, Precision, Recall, F1, IOU, Dice:", test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice)
     visualize.plot_actual_vs_predicted("Test", dataset_test, model, config, n_images=3)
 
     wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
-               "Train mean precision": train_mean_precision, "Val mean precision": val_mean_precision, "Test mean precision": test_mean_precision,
-               "Train mean recall": train_mean_recall, "Val mean recall": val_mean_recall, "Test mean recall": test_mean_recall,
-               "Train mean f1": train_mean_f1_score, "Val mean f1": val_mean_f1_score, "Test mean f1": test_mean_f1_score,})
+            "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,
+            "Train Recall": train_recall, "Val Recall": val_recall, "Test mean Recall": test_recall,
+            "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score,
+            "Train IOU": train_iou, "Val IOU": val_iou, "Test IOU": test_iou,
+            "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
+
     wandb.save(model_path)
 
     wandb.finish()
