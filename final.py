@@ -50,7 +50,6 @@ ROOT_DIR = os.path.abspath("../../")
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils, visualize
-import evaluate as eval
 
 # Path to trained weights file
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
@@ -62,37 +61,55 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 1
-VAL_STEPS = 1
+EPOCHS = 100
 
 class CustomConfig(Config):
-    """Configuration for training on the dataset.
-    Derives from the base Config class and overrides some values.
+    """Base configuration class. For custom configurations, create a
+    sub-class that inherits from this one and override properties
+    that need to be changed.
     """
-    # Give the configuration a recognizable name
-    NAME = "object"
+    # Name the configurations. For example, 'COCO', 'Experiment 3', ...etc.
+    # Useful if your code needs to do things differently depending on which
+    # experiment is running.
+    NAME = 'furnitures'  # Override in sub-classes
 
-    # We use a GPU with 12GB memory, which can fit two images.
-    # Adjust down if you use a smaller GPU.
-    # BATCH_SIZE = IMAGES_PER_GPU * GPU_COUNT ; 1 * 1 = 1
-    IMAGES_PER_GPU = 2
+    # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
+    GPU_COUNT = 1
+
+    # Number of images to train with on each GPU. A 12GB GPU can typically
+    # handle 2 images of 1024x1024px.
+    # Adjust based on your GPU memory and image sizes. Use the highest
+    # number that your GPU can handle for best performance.
+    IMAGES_PER_GPU = 1
 
     # Number of training steps per epoch
-    STEPS_PER_EPOCH = 1
+    # This doesn't need to match the size of the training set. Tensorboard
+    # updates are saved at the end of each epoch, so setting this to a
+    # smaller number means getting more frequent TensorBoard updates.
+    # Validation stats are also calculated at each epoch end and they
+    # might take a while, so don't set this too small to avoid spending
+    # a lot of time on validation stats.
+    STEPS_PER_EPOCH = 1000
 
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
     # down the training.
-    VALIDATION_STEPS = VAL_STEPS
+    VALIDATION_STEPS = 20
 
+    # Backbone network architecture
+    # Supported values are: resnet50, resnet101.
+    # You can also provide a callable that should have the signature
+    # of model.resnet_graph. If you do so, you need to supply a callable
+    # to COMPUTE_BACKBONE_SHAPE as well
     BACKBONE = "resnet101"
 
-    # Number of classes (including background)
-    NUM_CLASSES = 1 + 16  # Background + furniture objects
+    # Only useful if you supply a callable to BACKBONE. Should compute
+    # the shape of each layer of the FPN Pyramid.
+    # See model.compute_backbone_shapes
+    COMPUTE_BACKBONE_SHAPE = None
 
-    IMAGE_MIN_DIM = 512
-    IMAGE_MAX_DIM = 512
-
+    # The strides of each layer of the FPN Pyramid. These values
+    # are based on a Resnet101 backbone.
     BACKBONE_STRIDES = [4, 8, 16, 32, 64]
 
     # Size of the fully-connected layers in the classification graph
@@ -101,15 +118,144 @@ class CustomConfig(Config):
     # Size of the top-down layers used to build the feature pyramid
     TOP_DOWN_PYRAMID_SIZE = 256
 
-    # Skip detections with < 50% confidence
-    DETECTION_MIN_CONFIDENCE = 0.5
+    # Number of classification classes (including background)
+    NUM_CLASSES = 1 + 16 # Override in sub-classes
 
+    # Length of square anchor side in pixels
+    RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
+
+    # Ratios of anchors at each cell (width/height)
+    # A value of 1 represents a square anchor, and 0.5 is a wide anchor
+    RPN_ANCHOR_RATIOS = [0.5, 1, 2]
+
+    # Anchor stride
+    # If 1 then anchors are created for each cell in the backbone feature map.
+    # If 2, then anchors are created for every other cell, and so on.
+    RPN_ANCHOR_STRIDE = 1
+
+    # Non-max suppression threshold to filter RPN proposals.
+    # You can increase this during training to generate more propsals.
+    RPN_NMS_THRESHOLD = 0.7
+
+    # How many anchors per image to use for RPN training
+    RPN_TRAIN_ANCHORS_PER_IMAGE = 256
+    
+    # ROIs kept after tf.nn.top_k and before non-maximum suppression
+    PRE_NMS_LIMIT = 6000
+
+    # ROIs kept after non-maximum suppression (training and inference)
+    POST_NMS_ROIS_TRAINING = 2000
+    POST_NMS_ROIS_INFERENCE = 1000
+
+    # If enabled, resizes instance masks to a smaller size to reduce
+    # memory load. Recommended when using high-resolution images.
+    USE_MINI_MASK = False
+    MINI_MASK_SHAPE = (56, 56)  # (height, width) of the mini-mask
+
+    # Input image resizing
+    # Generally, use the "square" resizing mode for training and predicting
+    # and it should work well in most cases. In this mode, images are scaled
+    # up such that the small side is = IMAGE_MIN_DIM, but ensuring that the
+    # scaling doesn't make the long side > IMAGE_MAX_DIM. Then the image is
+    # padded with zeros to make it a square so multiple images can be put
+    # in one batch.
+    # Available resizing modes:
+    # none:   No resizing or padding. Return the image unchanged.
+    # square: Resize and pad with zeros to get a square image
+    #         of size [max_dim, max_dim].
+    # pad64:  Pads width and height with zeros to make them multiples of 64.
+    #         If IMAGE_MIN_DIM or IMAGE_MIN_SCALE are not None, then it scales
+    #         up before padding. IMAGE_MAX_DIM is ignored in this mode.
+    #         The multiple of 64 is needed to ensure smooth scaling of feature
+    #         maps up and down the 6 levels of the FPN pyramid (2**6=64).
+    # crop:   Picks random crops from the image. First, scales the image based
+    #         on IMAGE_MIN_DIM and IMAGE_MIN_SCALE, then picks a random crop of
+    #         size IMAGE_MIN_DIM x IMAGE_MIN_DIM. Can be used in training only.
+    #         IMAGE_MAX_DIM is not used in this mode.
+    IMAGE_RESIZE_MODE = "square"
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 512
+    # Minimum scaling ratio. Checked after MIN_IMAGE_DIM and can force further
+    # up scaling. For example, if set to 2 then images are scaled up to double
+    # the width and height, or more, even if MIN_IMAGE_DIM doesn't require it.
+    # However, in 'square' mode, it can be overruled by IMAGE_MAX_DIM.
+    IMAGE_MIN_SCALE = 0
+    # Number of color channels per image. RGB = 3, grayscale = 1, RGB-D = 4
+    # Changing this requires other changes in the code. See the WIKI for more
+    # details: https://github.com/matterport/Mask_RCNN/wiki
+    IMAGE_CHANNEL_COUNT = 3
+
+    # Image mean (RGB)
+    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
+
+    # Number of ROIs per image to feed to classifier/mask heads
+    # The Mask RCNN paper uses 512 but often the RPN doesn't generate
+    # enough positive proposals to fill this and keep a positive:negative
+    # ratio of 1:3. You can increase the number of proposals by adjusting
+    # the RPN NMS threshold.
+    TRAIN_ROIS_PER_IMAGE = 200
+
+    # Percent of positive ROIs used to train classifier/mask heads
+    ROI_POSITIVE_RATIO = 0.33
+
+    # Pooled ROIs
+    POOL_SIZE = 7
+    MASK_POOL_SIZE = 14
+
+    # Shape of output mask
+    # To change this you also need to change the neural network mask branch
+    MASK_SHAPE = [28, 28]
+
+    # Maximum number of ground truth instances to use in one image
+    MAX_GT_INSTANCES = 100
+
+    # Bounding box refinement standard deviation for RPN and final detections.
+    RPN_BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
+    BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
+
+    # Max number of final detections
+    DETECTION_MAX_INSTANCES = 35
+
+    # Minimum probability value to accept a detected instance
+    # ROIs below this threshold are skipped
+    DETECTION_MIN_CONFIDENCE = 0.7
+
+    # Non-maximum suppression threshold for detection
+    DETECTION_NMS_THRESHOLD = 0.3
+
+    # Learning rate and momentum
+    # The Mask RCNN paper uses lr=0.02, but on TensorFlow it causes
+    # weights to explode. Likely due to differences in optimizer
+    # implementation.
     LEARNING_RATE = 0.001
-    LEARNING_MOMENTUM = 0.9
+    LEARNING_MOMENTUM = 0.75
 
     # Weight decay regularization
-    WEIGHT_DECAY = 0.0001
-    
+    WEIGHT_DECAY = 0.001
+
+    # Loss weights for more precise optimization.
+    # Can be used for R-CNN training setup.
+    LOSS_WEIGHTS = {
+        "rpn_class_loss": 1.,
+        "rpn_bbox_loss": 1.,
+        "mrcnn_class_loss": 1.,
+        "mrcnn_bbox_loss": 1.,
+        "mrcnn_mask_loss": 1.
+    }
+
+    # Use RPN ROIs or externally generated ROIs for training
+    # Keep this True for most situations. Set to False if you want to train
+    # the head branches on ROI generated by code rather than the ROIs from
+    # the RPN. For example, to debug the classifier head without having to
+    # train the RPN.
+    USE_RPN_ROIS = True
+
+    # Train or freeze batch normalization layers
+    #     None: Train BN layers. This is the normal mode
+    #     False: Freeze BN layers. Good when using a small batch size
+    #     True: (don't use). Set layer in training mode even when predicting
+    TRAIN_BN = False  # Defaulting to False since batch size is often small
+
     # Gradient norm clipping
     GRADIENT_CLIP_NORM = 5.0
 
@@ -359,9 +505,64 @@ def detect_and_color_splash(model, image_path=None, video_path=None):
     print("Saved to ", file_name)
 
 
+def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
+    APs = []
+    precisions = []
+    recalls = []
+    f1_scores = []
+    IOUs =[]
+    dices = []
+
+    for image_id in dataset.image_ids:
+        # Load image, bounding boxes, and masks for the image id
+        image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
+
+        # Convert pixel values (e.g., normalize and resize)
+        scaled_image = modellib.mold_image(image, cfg)
+
+        # Make prediction - detect returns the following:
+        # rois: [N, (y1, x1, y2, x2)] detection bounding boxes
+        # class_ids: [N] int class IDs
+        # scores: [N] float probability scores for the class IDs
+        # masks: [H, W, N] instance binary masks
+        yhat = model.detect([scaled_image])
+
+        # Extract results for the current image
+        r = yhat[0]
+
+        # Calculate statistics, including AP
+        AP, _, _, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'], iou_threshold=iou_threshold)
+        max_iou_per_box = np.max(overlaps, axis=1)
+        average_iou = np.mean(max_iou_per_box)
+
+        # Calculate precision, recall, and F1 score
+        precision, recall, f1_score = utils.compute_precision_recall_f1(r["rois"], gt_bbox, iou_threshold)
+
+        dice = 2*average_iou / (average_iou + 1)
+
+        # Store individual values
+        APs.append(AP)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1_scores.append(f1_score)
+        IOUs.append(average_iou)
+        dices.append(dice)
+
+    # Calculate the mean values
+    mAP = np.mean(APs)
+    precision = np.mean(precisions)
+    recall = np.mean(recalls)
+    f1_score = np.mean(f1_scores)
+    iou = np.mean(IOUs)
+    dice = np.mean(dices)
+
+    return mAP, precision, recall, f1_score, iou, dice
+
+
 class CustomWandbCallback(Callback):
     def on_epoch_end(self, epoch, logs=None):
         wandb.log(logs)  # Log the metrics to W&B
+
 
 if __name__ == '__main__':
     ############################################################
@@ -418,8 +619,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
-                        group='Test',#set group name
-                        name='Test1',#set run name
+                        group='Iter1',#set group name
+                        name='Run1',#set run name
                         resume=False#resume run
                         )
 
@@ -472,7 +673,7 @@ if __name__ == '__main__':
     ############################################################
     dataset_path = '../dataset/'
     log_path = './logs/'
-    model_path = './logs/object/furniture_segment.h5'
+    model_path = './logs/'+ config.NAME + '/furniture_segment.h5'
 
     # Training dataset.
     dataset_train = CustomDataset()
@@ -489,9 +690,6 @@ if __name__ == '__main__':
     dataset_test.load_custom(args.dataset, "test")
     dataset_test.prepare()
 
-    # create config
-    config = eval.PredictionConfig()
-
     # define the model
     model = modellib.MaskRCNN(mode="inference", model_dir=log_path, config=config)
 
@@ -499,17 +697,17 @@ if __name__ == '__main__':
     model.load_weights(model_path, by_name=True)
         
     # evaluate model on training dataset
-    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = eval.evaluate_model(dataset_train, model, config)
+    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, config)
     print("Train mAP, Precision, Recall, F1, IOU, Dice:", train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice)
     visualize.plot_actual_vs_predicted("Train", dataset_train, model, config, n_images=3)
 
     # evaluate model on test dataset
-    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = eval.evaluate_model(dataset_val, model, config)
+    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, config)
     print("Val mAP, Precision, Recall, F1, IOU, Dice:", val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice)
     visualize.plot_actual_vs_predicted("Val", dataset_val, model, config, n_images=3)
 
     # evaluate model on test dataset
-    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = eval.evaluate_model(dataset_test, model, config)
+    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, config)
     print("Test mAP, Precision, Recall, F1, IOU, Dice:", test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice)
     visualize.plot_actual_vs_predicted("Test", dataset_test, model, config, n_images=3)
 
