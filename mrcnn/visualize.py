@@ -72,17 +72,17 @@ def random_colors(N, bright=True):
     random.shuffle(colors)
     return colors
 
+import skimage.color
 
 def apply_mask(image, mask, color, alpha=0.5):
     """Apply the given mask to the image.
     """
-    for c in range(3):
+    for c in range(1):
         image[:, :, c] = np.where(mask == 1,
                                   image[:, :, c] *
                                   (1 - alpha) + alpha * color[c] * 255,
                                   image[:, :, c])
     return image
-
 
 # def display_instances(image, boxes, masks, class_ids, class_names,
 #                       scores=None, title="",
@@ -626,14 +626,14 @@ def log_instances_to_wandb(image, boxes, masks, class_ids, class_names,
                                 show_mask, show_bbox, show_caption,
                                 colors, captions)
 
-    # Convert the figure to an image array
+    # # Convert the figure to an image array
     canvas = FigureCanvas(fig)
     canvas.draw()
-    image_array = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
-    image_array = image_array.reshape(canvas.get_width_height()[::-1] + (3,))
+    image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+    image = image.reshape(canvas.get_width_height()[::-1] + (3,))
 
     # Log the image array in WandB
-    wandb.log({title: wandb.Image(image_array)})
+    wandb.log({title: wandb.Image(image)})
 
 
 def plot_actual_vs_predicted(dataset_type, dataset, model, cfg, n_images):
@@ -643,10 +643,6 @@ def plot_actual_vs_predicted(dataset_type, dataset, model, cfg, n_images):
         image = dataset.load_image(i)
         mask, class_ids = dataset.load_mask(i)
         bbox = utils.extract_bboxes(mask)
-
-        # Log actual instances plot to WandB
-        log_instances_to_wandb(image, bbox, mask, class_ids, dataset.class_names,
-                               title=dataset_type+"_Actual", figsize=(8, 8), show_mask=False)
 
         # Predicted image
         # Convert pixel values (e.g., center)
@@ -659,4 +655,8 @@ def plot_actual_vs_predicted(dataset_type, dataset, model, cfg, n_images):
         # Log predicted instances plot to WandB
         log_instances_to_wandb(image, yhat['rois'], yhat['masks'], yhat['class_ids'],
                                dataset.class_names, yhat['scores'], title=dataset_type+"_Predicted",
-                               figsize=(8, 8))
+                               figsize=(8, 8), show_mask=False)
+
+        # Log actual instances plot to WandB
+        log_instances_to_wandb(image, bbox, mask, class_ids, dataset.class_names,
+                               title=dataset_type+"_Actual", figsize=(8, 8), show_mask=False)

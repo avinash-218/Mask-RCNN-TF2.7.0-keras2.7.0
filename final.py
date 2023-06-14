@@ -61,7 +61,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 100
+EPOCHS = 1
 
 class CustomConfig(Config):
     """Base configuration class. For custom configurations, create a
@@ -89,12 +89,12 @@ class CustomConfig(Config):
     # Validation stats are also calculated at each epoch end and they
     # might take a while, so don't set this too small to avoid spending
     # a lot of time on validation stats.
-    STEPS_PER_EPOCH = 1000
+    STEPS_PER_EPOCH = 1
 
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
     # down the training.
-    VALIDATION_STEPS = 20
+    VALIDATION_STEPS = 1
 
     # Backbone network architecture
     # Supported values are: resnet50, resnet101.
@@ -183,10 +183,10 @@ class CustomConfig(Config):
     # Number of color channels per image. RGB = 3, grayscale = 1, RGB-D = 4
     # Changing this requires other changes in the code. See the WIKI for more
     # details: https://github.com/matterport/Mask_RCNN/wiki
-    IMAGE_CHANNEL_COUNT = 3
+    IMAGE_CHANNEL_COUNT = 1
 
     # Image mean (RGB)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
+    MEAN_PIXEL = np.array([237.0])
 
     # Number of ROIs per image to feed to classifier/mask heads
     # The Mask RCNN paper uses 512 but often the RPN doesn't generate
@@ -654,7 +654,7 @@ if __name__ == '__main__':
         # number of classes
         model.load_weights(weights_path, by_name=True, exclude=[
             "mrcnn_class_logits", "mrcnn_bbox_fc",
-            "mrcnn_bbox", "mrcnn_mask"])
+            "mrcnn_bbox", "mrcnn_mask", "conv1"])
     else:
         model.load_weights(weights_path, by_name=True)
 
