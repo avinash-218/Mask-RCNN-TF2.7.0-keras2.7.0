@@ -61,7 +61,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 1
+EPOCHS = 100
 
 class CustomConfig(Config):
     """Base configuration class. For custom configurations, create a
@@ -80,7 +80,7 @@ class CustomConfig(Config):
     # handle 2 images of 1024x1024px.
     # Adjust based on your GPU memory and image sizes. Use the highest
     # number that your GPU can handle for best performance.
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 8
 
     # Number of training steps per epoch
     # This doesn't need to match the size of the training set. Tensorboard
@@ -89,12 +89,12 @@ class CustomConfig(Config):
     # Validation stats are also calculated at each epoch end and they
     # might take a while, so don't set this too small to avoid spending
     # a lot of time on validation stats.
-    STEPS_PER_EPOCH = 1
+    STEPS_PER_EPOCH = 1000
 
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
     # down the training.
-    VALIDATION_STEPS = 1
+    VALIDATION_STEPS = 20
 
     # Backbone network architecture
     # Supported values are: resnet50, resnet101.
@@ -173,8 +173,8 @@ class CustomConfig(Config):
     #         size IMAGE_MIN_DIM x IMAGE_MIN_DIM. Can be used in training only.
     #         IMAGE_MAX_DIM is not used in this mode.
     IMAGE_RESIZE_MODE = "square"
-    IMAGE_MIN_DIM = 512
-    IMAGE_MAX_DIM = 512
+    IMAGE_MIN_DIM = 2048
+    IMAGE_MAX_DIM = 2048
     # Minimum scaling ratio. Checked after MIN_IMAGE_DIM and can force further
     # up scaling. For example, if set to 2 then images are scaled up to double
     # the width and height, or more, even if MIN_IMAGE_DIM doesn't require it.
@@ -186,7 +186,7 @@ class CustomConfig(Config):
     IMAGE_CHANNEL_COUNT = 1
 
     # Image mean (RGB)
-    MEAN_PIXEL = np.array([237.0])
+    MEAN_PIXEL = np.array([237])
 
     # Number of ROIs per image to feed to classifier/mask heads
     # The Mask RCNN paper uses 512 but often the RPN doesn't generate
@@ -207,21 +207,21 @@ class CustomConfig(Config):
     MASK_SHAPE = [28, 28]
 
     # Maximum number of ground truth instances to use in one image
-    MAX_GT_INSTANCES = 100
+    MAX_GT_INSTANCES = 50
 
     # Bounding box refinement standard deviation for RPN and final detections.
     RPN_BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
     BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
 
     # Max number of final detections
-    DETECTION_MAX_INSTANCES = 35
+    DETECTION_MAX_INSTANCES = 40
 
     # Minimum probability value to accept a detected instance
     # ROIs below this threshold are skipped
     DETECTION_MIN_CONFIDENCE = 0.7
 
     # Non-maximum suppression threshold for detection
-    DETECTION_NMS_THRESHOLD = 0.3
+    DETECTION_NMS_THRESHOLD = 0.65
 
     # Learning rate and momentum
     # The Mask RCNN paper uses lr=0.02, but on TensorFlow it causes
@@ -315,8 +315,6 @@ class CustomDataset(utils.Dataset):
         annotation_cnt = 0
         len_annotations = len(annotations)
 
-        temp_cnt = 0
-
         for i in images:
             image_id = i['file_name']
             image_path = dataset_dir + '/' +image_id
@@ -353,10 +351,6 @@ class CustomDataset(utils.Dataset):
                 polygons=polygons,
                 num_ids=num_ids)
 
-            temp_cnt+=1
-            if(temp_cnt==3):
-                break
-
     def load_mask(self, image_id):
         """Generate instance masks for an image.
        Returns:
@@ -378,6 +372,7 @@ class CustomDataset(utils.Dataset):
         num_ids = info['num_ids']
         mask = np.zeros([info["height"], info["width"], len(info["polygons"])],
                         dtype=np.uint8)
+
         for i, p in enumerate(info["polygons"]):
             # Get indexes of pixels inside the polygon and set them to 1
             rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
