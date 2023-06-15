@@ -32,6 +32,8 @@ from tensorflow.keras.callbacks import EarlyStopping, Callback
 import wandb
 from wandb.keras import WandbCallback
 import json
+import copy
+from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -80,7 +82,7 @@ class CustomConfig(Config):
     # handle 2 images of 1024x1024px.
     # Adjust based on your GPU memory and image sizes. Use the highest
     # number that your GPU can handle for best performance.
-    IMAGES_PER_GPU = 8
+    IMAGES_PER_GPU = 2
 
     # Number of training steps per epoch
     # This doesn't need to match the size of the training set. Tensorboard
@@ -259,6 +261,9 @@ class CustomConfig(Config):
     # Gradient norm clipping
     GRADIENT_CLIP_NORM = 5.0
 
+class EvalConfig(CustomConfig):
+    IMAGES_PER_GPU = 1
+    
 ############################################################
 #  Dataset
 ############################################################
@@ -508,7 +513,7 @@ def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
     IOUs =[]
     dices = []
 
-    for image_id in dataset.image_ids:
+    for image_id in tqdm(dataset.image_ids):
         # Load image, bounding boxes, and masks for the image id
         image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
 
@@ -666,9 +671,11 @@ if __name__ == '__main__':
     ############################################################
     #  Evaluation
     ############################################################
+    eval_config = EvalConfig()
+
     dataset_path = '../dataset/'
     log_path = './logs/'
-    model_path = './logs/'+ config.NAME + '/furniture_segment.h5'
+    model_path = './logs/'+ eval_config.NAME + '/furniture_segment.h5'
 
     # Training dataset.
     dataset_train = CustomDataset()
@@ -686,25 +693,31 @@ if __name__ == '__main__':
     dataset_test.prepare()
 
     # define the model
-    model = modellib.MaskRCNN(mode="inference", model_dir=log_path, config=config)
+    model = modellib.MaskRCNN(mode="inference", model_dir=log_path, config=eval_config)
 
     # load model weights
     model.load_weights(model_path, by_name=True)
         
     # evaluate model on training dataset
-    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, config)
-    print("Train mAP, Precision, Recall, F1, IOU, Dice:", train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice)
-    visualize.plot_actual_vs_predicted("Train", dataset_train, model, config, n_images=3)
+    print('Evaluating on Train Dataset')
+    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
+    print(f"Train - mAP: {train_mAP:.4f}, Precision: {train_precision:.4f}, Recall: {train_recall:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}, Dice: {train_dice:.4f}")
+
+    # evaluate model on val dataset
+    print('Evaluating on Validation Dataset')
+    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config)
+    print(f"Val - mAP: {val_mAP:.4f}, Precision: {val_precision:.4f}, Recall: {val_recall:.4f}, F1: {val_f1_score:.4f}, IOU: {val_iou:.4f}, Dice: {val_dice:.4f}")
 
     # evaluate model on test dataset
-    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, config)
-    print("Val mAP, Precision, Recall, F1, IOU, Dice:", val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice)
-    visualize.plot_actual_vs_predicted("Val", dataset_val, model, config, n_images=3)
-
-    # evaluate model on test dataset
-    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, config)
-    print("Test mAP, Precision, Recall, F1, IOU, Dice:", test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice)
-    visualize.plot_actual_vs_predicted("Test", dataset_test, model, config, n_images=3)
+    print('Evaluating on Test Dataset')
+    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
+    print(f"Test - mAP: {test_mAP:.4f}, Precision: {test_precision:.4f}, Recall: {test_recall:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}, Dice: {test_dice:.4f}")
+    
+    # visualize plots
+    print("Logging Sample Visualization Results")
+    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=5)
+    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=5)
+    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=5)
 
     wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
             "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,

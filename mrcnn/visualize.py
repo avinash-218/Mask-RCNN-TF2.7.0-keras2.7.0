@@ -32,6 +32,8 @@ import wandb
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+from tqdm import tqdm
+
 ############################################################
 #  Visualization
 ############################################################
@@ -578,7 +580,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             else:
                 caption = captions[i]
             ax.text(x1, y1 + 8, caption,
-                    color='w', size=11, backgroundcolor="none")
+                    color='black', size=11, backgroundcolor="none")
 
         # Mask
         mask = masks[:, :, i]
@@ -638,7 +640,7 @@ def log_instances_to_wandb(image, boxes, masks, class_ids, class_names,
 
 def plot_actual_vs_predicted(dataset_type, dataset, model, cfg, n_images):
     # Load image and mask
-    for i in range(n_images):
+    for i in tqdm(range(n_images)):
         # Load the image and mask
         image = dataset.load_image(i)
         mask, class_ids = dataset.load_mask(i)
