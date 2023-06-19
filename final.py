@@ -41,9 +41,9 @@ warnings.filterwarnings("ignore")
 with open('API.json', 'r') as config_file:
     config = json.load(config_file)
 
-# Retrieve the Wandb API key
-wandb_api_key = config['wandb_api_key']
-wandb.login(key=wandb_api_key)
+# # Retrieve the Wandb API key
+# wandb_api_key = config['wandb_api_key']
+# wandb.login(key=wandb_api_key)
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -325,7 +325,7 @@ class CustomDataset(utils.Dataset):
             image_path = dataset_dir + '/' +image_id
             height = i['height']
             width = i['width']
-            identity = i['id']
+            identity = i['id'] #image id
 
             j = annotation_cnt
             num_ids = []
@@ -410,7 +410,6 @@ def train(model):
     dataset_val = CustomDataset()
     dataset_val.load_custom(args.dataset, "val")
     dataset_val.prepare()
-
 
     # Create an EarlyStopping callback
     early_stopping_callback = EarlyStopping(patience=3, restore_best_weights=True)
@@ -698,6 +697,12 @@ if __name__ == '__main__':
 
     # load model weights
     model.load_weights(model_path, by_name=True)
+
+    # visualize plots
+    print("Logging Sample Visualization Results")
+    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=5)
+    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=5)
+    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=5)
         
     # evaluate model on training dataset
     print('Evaluating on Train Dataset')
@@ -714,12 +719,6 @@ if __name__ == '__main__':
     test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
     print(f"Test - mAP: {test_mAP:.4f}, Precision: {test_precision:.4f}, Recall: {test_recall:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}, Dice: {test_dice:.4f}")
     
-    # visualize plots
-    print("Logging Sample Visualization Results")
-    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=5)
-    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=5)
-    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=5)
-
     wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
             "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,
             "Train Recall": train_recall, "Val Recall": val_recall, "Test mean Recall": test_recall,
