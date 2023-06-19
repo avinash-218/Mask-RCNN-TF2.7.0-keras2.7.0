@@ -360,9 +360,11 @@ class Dataset(object):
         # Load image
         image = skimage.io.imread(self.image_info[image_id]['path'])
         # If grayscale. Convert to RGB for consistency.
-        if image.ndim != 1:
-            image = skimage.color.rgb2gray(image)
-        image = image[..., np.newaxis]
+        if image.ndim != 3:
+            image = skimage.color.gray2rgb(image)
+        # If has an alpha channel, remove it for consistency
+        if image.shape[-1] == 4:
+            image = image[..., :3]
         return image
 
     def load_mask(self, image_id):
@@ -776,7 +778,7 @@ def compute_ap_range(gt_box, gt_class_id, gt_mask,
     return AP
 
 
-def compute_recall(pred_boxes, gt_boxes, iou_threshold):
+def compute_recall(pred_boxes, gt_boxes, iou):
     """Compute the recall at the given IoU threshold. It's an indication
     of how many GT boxes were found by the given prediction boxes.
 
@@ -787,7 +789,7 @@ def compute_recall(pred_boxes, gt_boxes, iou_threshold):
     overlaps = compute_overlaps(pred_boxes, gt_boxes)
     iou_max = np.max(overlaps, axis=1)
     iou_argmax = np.argmax(overlaps, axis=1)
-    positive_ids = np.where(iou_max >= iou_threshold)[0]
+    positive_ids = np.where(iou_max >= iou)[0]
     matched_gt_boxes = iou_argmax[positive_ids]
 
     recall = len(set(matched_gt_boxes)) / gt_boxes.shape[0]

@@ -74,12 +74,10 @@ def random_colors(N, bright=True):
     random.shuffle(colors)
     return colors
 
-import skimage.color
-
 def apply_mask(image, mask, color, alpha=0.5):
     """Apply the given mask to the image.
     """
-    for c in range(1):
+    for c in range(3):
         image[:, :, c] = np.where(mask == 1,
                                   image[:, :, c] *
                                   (1 - alpha) + alpha * color[c] * 255,
