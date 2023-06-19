@@ -261,9 +261,6 @@ class CustomConfig(Config):
     # Gradient norm clipping
     GRADIENT_CLIP_NORM = 5.0
 
-class EvalConfig(CustomConfig):
-    IMAGES_PER_GPU = 1
-    
 ############################################################
 #  Dataset
 ############################################################
@@ -503,61 +500,6 @@ def detect_and_color_splash(model, image_path=None, video_path=None):
         vwriter.release()
     print("Saved to ", file_name)
 
-
-def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
-    APs = []
-    precisions = []
-    recalls = []
-    f1_scores = []
-    IOUs =[]
-    dices = []
-
-    for image_id in tqdm(dataset.image_ids):
-        # Load image, bounding boxes, and masks for the image id
-        image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
-
-        # Convert pixel values (e.g., normalize and resize)
-        scaled_image = modellib.mold_image(image, cfg)
-
-        # Make prediction - detect returns the following:
-        # rois: [N, (y1, x1, y2, x2)] detection bounding boxes
-        # class_ids: [N] int class IDs
-        # scores: [N] float probability scores for the class IDs
-        # masks: [H, W, N] instance binary masks
-        yhat = model.detect([scaled_image])
-
-        # Extract results for the current image
-        r = yhat[0]
-
-        # Calculate statistics, including AP
-        AP, _, _, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'], iou_threshold=iou_threshold)
-        max_iou_per_box = np.max(overlaps, axis=1)
-        average_iou = np.mean(max_iou_per_box)
-
-        # Calculate precision, recall, and F1 score
-        precision, recall, f1_score = utils.compute_precision_recall_f1(r["rois"], gt_bbox, iou_threshold)
-
-        dice = 2*average_iou / (average_iou + 1)
-
-        # Store individual values
-        APs.append(AP)
-        precisions.append(precision)
-        recalls.append(recall)
-        f1_scores.append(f1_score)
-        IOUs.append(average_iou)
-        dices.append(dice)
-
-    # Calculate the mean values
-    mAP = np.mean(APs)
-    precision = np.mean(precisions)
-    recall = np.mean(recalls)
-    f1_score = np.mean(f1_scores)
-    iou = np.mean(IOUs)
-    dice = np.mean(dices)
-
-    return mAP, precision, recall, f1_score, iou, dice
-
-
 class CustomWandbCallback(Callback):
     def on_epoch_end(self, epoch, logs=None):
         wandb.log(logs)  # Log the metrics to W&B
@@ -667,66 +609,9 @@ if __name__ == '__main__':
         print("'{}' is not recognized. "
               "Use 'train' or 'splash'".format(args.command))
         
-    ############################################################
-    #  Evaluation
-    ############################################################
-    eval_config = EvalConfig()
-
-    dataset_path = '../dataset/'
-    log_path = './logs/'
     model_path = './logs/'+ eval_config.NAME + '/furniture_segment.h5'
     wandb.save(model_path)
 
-    # Training dataset.
-    dataset_train = CustomDataset()
-    dataset_train.load_custom(args.dataset, "train")
-    dataset_train.prepare()
-
-    # Validation dataset
-    dataset_val = CustomDataset()
-    dataset_val.load_custom(args.dataset, "val")
-    dataset_val.prepare()
-
-    # Test dataset
-    dataset_test = CustomDataset()
-    dataset_test.load_custom(args.dataset, "test")
-    dataset_test.prepare()
-
-    # define the model
-    model = modellib.MaskRCNN(mode="inference", model_dir=log_path, config=eval_config)
-
-    # load model weights
-    model.load_weights(model_path, by_name=True)
-
-    # visualize plots
-    print("Logging Sample Visualization Results")
-    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=5)
-    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=5)
-    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=5)
-        
-    # evaluate model on training dataset
-    print('Evaluating on Train Dataset')
-    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
-    print(f"Train - mAP: {train_mAP:.4f}, Precision: {train_precision:.4f}, Recall: {train_recall:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}, Dice: {train_dice:.4f}")
-
-    # evaluate model on val dataset
-    print('Evaluating on Validation Dataset')
-    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config)
-    print(f"Val - mAP: {val_mAP:.4f}, Precision: {val_precision:.4f}, Recall: {val_recall:.4f}, F1: {val_f1_score:.4f}, IOU: {val_iou:.4f}, Dice: {val_dice:.4f}")
-
-    # evaluate model on test dataset
-    print('Evaluating on Test Dataset')
-    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
-    print(f"Test - mAP: {test_mAP:.4f}, Precision: {test_precision:.4f}, Recall: {test_recall:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}, Dice: {test_dice:.4f}")
-    
-    wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
-            "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,
-            "Train Recall": train_recall, "Val Recall": val_recall, "Test mean Recall": test_recall,
-            "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score,
-            "Train IOU": train_iou, "Val IOU": val_iou, "Test IOU": test_iou,
-            "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
-
     wandb.finish()
-
 
 # python final.py train --dataset=../dataset/ --weights=coco --logs=./logs
