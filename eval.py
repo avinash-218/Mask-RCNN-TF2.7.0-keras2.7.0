@@ -36,8 +36,6 @@ from mrcnn import model as modellib, utils, visualize
 # through the command line argument --logs
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
-import final
-
 ############################################################
 #  Configurations
 ############################################################
