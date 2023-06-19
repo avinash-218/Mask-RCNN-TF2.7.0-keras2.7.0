@@ -17,7 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Read the JSON configuration file
-with open('API.json', 'r') as config_file:
+with open('/kaggle/input/furniture/API.json', 'r') as config_file:
     config = json.load(config_file)
 
 # # Retrieve the Wandb API key
@@ -32,9 +32,6 @@ sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils, visualize
 
-# Path to trained weights file
-COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
-
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
@@ -44,7 +41,6 @@ import final
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 100
 
 class CustomConfig(Config):
     """Base configuration class. For custom configurations, create a
@@ -443,10 +439,10 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', required=False,
                         metavar="/path/to/custom/dataset/",
                         help='Directory of the custom dataset')
-    parser.add_argument('--logs', required=False,
+    parser.add_argument('--model_path', required=False,
                         default=DEFAULT_LOGS_DIR,
-                        metavar="/path/to/logs/",
-                        help='Logs and checkpoints directory (default=logs/)')
+                        metavar="/path/to/model/",
+                        help='saved model path')
     args = parser.parse_args()
 
     class InferenceConfig(CustomConfig):
@@ -464,10 +460,6 @@ if __name__ == '__main__':
                         resume=False#resume run
                         )
 
-    dataset_path = '../dataset/'
-    log_path = './logs/'
-    model_path = './logs/'+ eval_config.NAME + '/furniture_segment.h5'
-
     # Training dataset.
     dataset_train = CustomDataset()
     dataset_train.load_custom(args.dataset, "train")
@@ -484,10 +476,10 @@ if __name__ == '__main__':
     dataset_test.prepare()
 
     # define the model
-    model = modellib.MaskRCNN(mode="inference", model_dir=log_path, config=eval_config)
+    model = modellib.MaskRCNN(mode="inference", model_dir='./logs/', config=eval_config)
 
     # load model weights
-    model.load_weights(model_path, by_name=True)
+    model.load_weights(args.model_path, by_name=True)
 
     # visualize plots
     print("Logging Sample Visualization Results")
@@ -518,6 +510,5 @@ if __name__ == '__main__':
             "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
 
     wandb.finish()
-
 
 # python eval.py --dataset=../dataset/ --logs=./logs
