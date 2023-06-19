@@ -91,7 +91,7 @@ class CustomConfig(Config):
     # Validation stats are also calculated at each epoch end and they
     # might take a while, so don't set this too small to avoid spending
     # a lot of time on validation stats.
-    STEPS_PER_EPOCH = 1000
+    STEPS_PER_EPOCH = 100
 
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
@@ -124,7 +124,7 @@ class CustomConfig(Config):
     NUM_CLASSES = 1 + 16 # Override in sub-classes
 
     # Length of square anchor side in pixels
-    RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
+    RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)
 
     # Ratios of anchors at each cell (width/height)
     # A value of 1 represents a square anchor, and 0.5 is a wide anchor
@@ -413,7 +413,7 @@ def train(model):
 
 
     # Create an EarlyStopping callback
-    early_stopping_callback = EarlyStopping(patience=5, restore_best_weights=True)
+    early_stopping_callback = EarlyStopping(patience=3, restore_best_weights=True)
     
     config = CustomConfig()
     config_dict = config.to_dict()
@@ -676,6 +676,7 @@ if __name__ == '__main__':
     dataset_path = '../dataset/'
     log_path = './logs/'
     model_path = './logs/'+ eval_config.NAME + '/furniture_segment.h5'
+    wandb.save(model_path)
 
     # Training dataset.
     dataset_train = CustomDataset()
@@ -725,8 +726,6 @@ if __name__ == '__main__':
             "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score,
             "Train IOU": train_iou, "Val IOU": val_iou, "Test IOU": test_iou,
             "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
-
-    wandb.save(model_path)
 
     wandb.finish()
 
