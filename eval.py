@@ -40,6 +40,8 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 #  Configurations
 ############################################################
 
+EPOCHS = 100
+
 class CustomConfig(Config):
     """Base configuration class. For custom configurations, create a
     sub-class that inherits from this one and override properties
