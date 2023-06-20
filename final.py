@@ -42,8 +42,8 @@ with open('API.json', 'r') as config_file:
     config = json.load(config_file)
 
 # # Retrieve the Wandb API key
-# wandb_api_key = config['wandb_api_key']
-# wandb.login(key=wandb_api_key)
+wandb_api_key = config['wandb_api_key']
+wandb.login(key=wandb_api_key)
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -63,7 +63,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 100
+EPOCHS = 1
 
 class CustomConfig(Config):
     """Base configuration class. For custom configurations, create a
@@ -91,12 +91,12 @@ class CustomConfig(Config):
     # Validation stats are also calculated at each epoch end and they
     # might take a while, so don't set this too small to avoid spending
     # a lot of time on validation stats.
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 1
 
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
     # down the training.
-    VALIDATION_STEPS = 20
+    VALIDATION_STEPS = 1
 
     # Backbone network architecture
     # Supported values are: resnet50, resnet101.
@@ -175,8 +175,8 @@ class CustomConfig(Config):
     #         size IMAGE_MIN_DIM x IMAGE_MIN_DIM. Can be used in training only.
     #         IMAGE_MAX_DIM is not used in this mode.
     IMAGE_RESIZE_MODE = "square"
-    IMAGE_MIN_DIM = 2048
-    IMAGE_MAX_DIM = 2048
+    IMAGE_MIN_DIM = 1024
+    IMAGE_MAX_DIM = 1024
     # Minimum scaling ratio. Checked after MIN_IMAGE_DIM and can force further
     # up scaling. For example, if set to 2 then images are scaled up to double
     # the width and height, or more, even if MIN_IMAGE_DIM doesn't require it.
@@ -209,31 +209,31 @@ class CustomConfig(Config):
     MASK_SHAPE = [28, 28]
 
     # Maximum number of ground truth instances to use in one image
-    MAX_GT_INSTANCES = 50
+    MAX_GT_INSTANCES = 100
 
     # Bounding box refinement standard deviation for RPN and final detections.
     RPN_BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
     BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
 
     # Max number of final detections
-    DETECTION_MAX_INSTANCES = 40
+    DETECTION_MAX_INSTANCES = 35
 
     # Minimum probability value to accept a detected instance
     # ROIs below this threshold are skipped
     DETECTION_MIN_CONFIDENCE = 0.7
 
     # Non-maximum suppression threshold for detection
-    DETECTION_NMS_THRESHOLD = 0.65
+    DETECTION_NMS_THRESHOLD = 0.3
 
     # Learning rate and momentum
     # The Mask RCNN paper uses lr=0.02, but on TensorFlow it causes
     # weights to explode. Likely due to differences in optimizer
     # implementation.
     LEARNING_RATE = 0.001
-    LEARNING_MOMENTUM = 0.75
+    LEARNING_MOMENTUM = 0.9
 
     # Weight decay regularization
-    WEIGHT_DECAY = 0.001
+    WEIGHT_DECAY = 0.0001
 
     # Loss weights for more precise optimization.
     # Can be used for R-CNN training setup.
@@ -426,7 +426,7 @@ def train(model):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=EPOCHS,
-                layers='heads',
+                layers='4+',
                 custom_callbacks=[early_stopping_callback, wandb_callback])
 
 
@@ -560,8 +560,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
-                        group='Iter1',#set group name
-                        name='Run1',#set run name
+                        group='Test',#set group name
+                        name='Run2',#set run name
                         resume=False#resume run
                         )
 
@@ -609,7 +609,7 @@ if __name__ == '__main__':
         print("'{}' is not recognized. "
               "Use 'train' or 'splash'".format(args.command))
         
-    model_path = './logs/'+ eval_config.NAME + '/furniture_segment.h5'
+    model_path = './logs/'+ config.NAME + '/furniture_segment.h5'
     wandb.save(model_path)
 
     wandb.finish()
