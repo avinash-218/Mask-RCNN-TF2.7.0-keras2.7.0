@@ -57,7 +57,7 @@ class CustomConfig(Config):
     # handle 2 images of 1024x1024px.
     # Adjust based on your GPU memory and image sizes. Use the highest
     # number that your GPU can handle for best performance.
-    IMAGES_PER_GPU = 2
+    IMAGES_PER_GPU = 4
 
     # Number of training steps per epoch
     # This doesn't need to match the size of the training set. Tensorboard
@@ -66,12 +66,12 @@ class CustomConfig(Config):
     # Validation stats are also calculated at each epoch end and they
     # might take a while, so don't set this too small to avoid spending
     # a lot of time on validation stats.
-    STEPS_PER_EPOCH = 1
+    STEPS_PER_EPOCH = 100
 
     # Number of validation steps to run at the end of every training epoch.
     # A bigger number improves accuracy of validation stats, but slows
     # down the training.
-    VALIDATION_STEPS = 1
+    VALIDATION_STEPS = 20
 
     # Backbone network architecture
     # Supported values are: resnet50, resnet101.
@@ -150,8 +150,8 @@ class CustomConfig(Config):
     #         size IMAGE_MIN_DIM x IMAGE_MIN_DIM. Can be used in training only.
     #         IMAGE_MAX_DIM is not used in this mode.
     IMAGE_RESIZE_MODE = "square"
-    IMAGE_MIN_DIM = 2048
-    IMAGE_MAX_DIM = 2048
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 512
     # Minimum scaling ratio. Checked after MIN_IMAGE_DIM and can force further
     # up scaling. For example, if set to 2 then images are scaled up to double
     # the width and height, or more, even if MIN_IMAGE_DIM doesn't require it.
@@ -184,31 +184,31 @@ class CustomConfig(Config):
     MASK_SHAPE = [28, 28]
 
     # Maximum number of ground truth instances to use in one image
-    MAX_GT_INSTANCES = 50
+    MAX_GT_INSTANCES = 100
 
     # Bounding box refinement standard deviation for RPN and final detections.
     RPN_BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
     BBOX_STD_DEV = np.array([0.1, 0.1, 0.2, 0.2])
 
     # Max number of final detections
-    DETECTION_MAX_INSTANCES = 40
+    DETECTION_MAX_INSTANCES = 35
 
     # Minimum probability value to accept a detected instance
     # ROIs below this threshold are skipped
     DETECTION_MIN_CONFIDENCE = 0.7
 
     # Non-maximum suppression threshold for detection
-    DETECTION_NMS_THRESHOLD = 0.65
+    DETECTION_NMS_THRESHOLD = 0.3
 
     # Learning rate and momentum
     # The Mask RCNN paper uses lr=0.02, but on TensorFlow it causes
     # weights to explode. Likely due to differences in optimizer
     # implementation.
     LEARNING_RATE = 0.001
-    LEARNING_MOMENTUM = 0.75
+    LEARNING_MOMENTUM = 0.9
 
     # Weight decay regularization
-    WEIGHT_DECAY = 0.001
+    WEIGHT_DECAY = 0.0001
 
     # Loss weights for more precise optimization.
     # Can be used for R-CNN training setup.
@@ -454,7 +454,7 @@ if __name__ == '__main__':
     myrun = wandb.init(
                         project='Eval MaskRCNN',#project name
                         group='Iter1',#set group name
-                        name='Run1',#set run name
+                        name='Run2',#set run name
                         resume=False#resume run
                         )
 
@@ -481,14 +481,14 @@ if __name__ == '__main__':
 
     # visualize plots
     print("Logging Sample Visualization Results")
-    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=5)
-    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=5)
-    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=5)
+    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=10)
+    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=10)
+    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=10)
         
-    # evaluate model on training dataset
-    print('Evaluating on Train Dataset')
-    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
-    print(f"Train - mAP: {train_mAP:.4f}, Precision: {train_precision:.4f}, Recall: {train_recall:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}, Dice: {train_dice:.4f}")
+    # # evaluate model on training dataset
+    # print('Evaluating on Train Dataset')
+    # train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
+    # print(f"Train - mAP: {train_mAP:.4f}, Precision: {train_precision:.4f}, Recall: {train_recall:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}, Dice: {train_dice:.4f}")
 
     # evaluate model on val dataset
     print('Evaluating on Validation Dataset')
@@ -500,12 +500,19 @@ if __name__ == '__main__':
     test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
     print(f"Test - mAP: {test_mAP:.4f}, Precision: {test_precision:.4f}, Recall: {test_recall:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}, Dice: {test_dice:.4f}")
     
-    wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
-            "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,
-            "Train Recall": train_recall, "Val Recall": val_recall, "Test mean Recall": test_recall,
-            "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score,
-            "Train IOU": train_iou, "Val IOU": val_iou, "Test IOU": test_iou,
-            "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
+    wandb.log({"Val mAP": val_mAP, "Test mAP": test_mAP,
+            "Val Precision": val_precision, "Test Precision": test_precision,
+            "Val Recall": val_recall, "Test mean Recall": test_recall,
+            "Val F1": val_f1_score, "Test mean F1": test_f1_score,
+            "Val IOU": val_iou, "Test IOU": test_iou,
+            "Val Dice": val_dice, "Test Dice": test_dice})
+
+    # wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
+    #         "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,
+    #         "Train Recall": train_recall, "Val Recall": val_recall, "Test mean Recall": test_recall,
+    #         "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score,
+    #         "Train IOU": train_iou, "Val IOU": val_iou, "Test IOU": test_iou,
+    #         "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
 
     wandb.finish()
 
