@@ -42,8 +42,8 @@ with open('API.json', 'r') as config_file:
     config = json.load(config_file)
 
 # # Retrieve the Wandb API key
-wandb_api_key = config['wandb_api_key']
-wandb.login(key=wandb_api_key)
+# wandb_api_key = config['wandb_api_key']
+# wandb.login(key=wandb_api_key)
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
