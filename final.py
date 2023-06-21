@@ -66,52 +66,20 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 EPOCHS = 1
 
 class CustomConfig(Config):
-    """Base configuration class. For custom configurations, create a
-    sub-class that inherits from this one and override properties
-    that need to be changed.
-    """
-    # Name the configurations. For example, 'COCO', 'Experiment 3', ...etc.
-    # Useful if your code needs to do things differently depending on which
-    # experiment is running.
     NAME = 'furnitures'  # Override in sub-classes
 
-    # NUMBER OF GPUs to use. When using only a CPU, this needs to be set to 1.
     GPU_COUNT = 1
 
-    # Number of images to train with on each GPU. A 12GB GPU can typically
-    # handle 2 images of 1024x1024px.
-    # Adjust based on your GPU memory and image sizes. Use the highest
-    # number that your GPU can handle for best performance.
-    IMAGES_PER_GPU = 2
+    IMAGES_PER_GPU = 1
 
-    # Number of training steps per epoch
-    # This doesn't need to match the size of the training set. Tensorboard
-    # updates are saved at the end of each epoch, so setting this to a
-    # smaller number means getting more frequent TensorBoard updates.
-    # Validation stats are also calculated at each epoch end and they
-    # might take a while, so don't set this too small to avoid spending
-    # a lot of time on validation stats.
-    STEPS_PER_EPOCH = 1
+    STEPS_PER_EPOCH = 100
 
-    # Number of validation steps to run at the end of every training epoch.
-    # A bigger number improves accuracy of validation stats, but slows
-    # down the training.
-    VALIDATION_STEPS = 1
+    VALIDATION_STEPS = 20
 
-    # Backbone network architecture
-    # Supported values are: resnet50, resnet101.
-    # You can also provide a callable that should have the signature
-    # of model.resnet_graph. If you do so, you need to supply a callable
-    # to COMPUTE_BACKBONE_SHAPE as well
     BACKBONE = "resnet101"
 
-    # Only useful if you supply a callable to BACKBONE. Should compute
-    # the shape of each layer of the FPN Pyramid.
-    # See model.compute_backbone_shapes
     COMPUTE_BACKBONE_SHAPE = None
 
-    # The strides of each layer of the FPN Pyramid. These values
-    # are based on a Resnet101 backbone.
     BACKBONE_STRIDES = [4, 8, 16, 32, 64]
 
     # Size of the fully-connected layers in the classification graph
@@ -154,47 +122,17 @@ class CustomConfig(Config):
     USE_MINI_MASK = False
     MINI_MASK_SHAPE = (56, 56)  # (height, width) of the mini-mask
 
-    # Input image resizing
-    # Generally, use the "square" resizing mode for training and predicting
-    # and it should work well in most cases. In this mode, images are scaled
-    # up such that the small side is = IMAGE_MIN_DIM, but ensuring that the
-    # scaling doesn't make the long side > IMAGE_MAX_DIM. Then the image is
-    # padded with zeros to make it a square so multiple images can be put
-    # in one batch.
-    # Available resizing modes:
-    # none:   No resizing or padding. Return the image unchanged.
-    # square: Resize and pad with zeros to get a square image
-    #         of size [max_dim, max_dim].
-    # pad64:  Pads width and height with zeros to make them multiples of 64.
-    #         If IMAGE_MIN_DIM or IMAGE_MIN_SCALE are not None, then it scales
-    #         up before padding. IMAGE_MAX_DIM is ignored in this mode.
-    #         The multiple of 64 is needed to ensure smooth scaling of feature
-    #         maps up and down the 6 levels of the FPN pyramid (2**6=64).
-    # crop:   Picks random crops from the image. First, scales the image based
-    #         on IMAGE_MIN_DIM and IMAGE_MIN_SCALE, then picks a random crop of
-    #         size IMAGE_MIN_DIM x IMAGE_MIN_DIM. Can be used in training only.
-    #         IMAGE_MAX_DIM is not used in this mode.
     IMAGE_RESIZE_MODE = "square"
-    IMAGE_MIN_DIM = 1024
-    IMAGE_MAX_DIM = 1024
-    # Minimum scaling ratio. Checked after MIN_IMAGE_DIM and can force further
-    # up scaling. For example, if set to 2 then images are scaled up to double
-    # the width and height, or more, even if MIN_IMAGE_DIM doesn't require it.
-    # However, in 'square' mode, it can be overruled by IMAGE_MAX_DIM.
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 512
+
     IMAGE_MIN_SCALE = 0
-    # Number of color channels per image. RGB = 3, grayscale = 1, RGB-D = 4
-    # Changing this requires other changes in the code. See the WIKI for more
-    # details: https://github.com/matterport/Mask_RCNN/wiki
+
     IMAGE_CHANNEL_COUNT = 3
 
     # Image mean (RGB)
     MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
 
-    # Number of ROIs per image to feed to classifier/mask heads
-    # The Mask RCNN paper uses 512 but often the RPN doesn't generate
-    # enough positive proposals to fill this and keep a positive:negative
-    # ratio of 1:3. You can increase the number of proposals by adjusting
-    # the RPN NMS threshold.
     TRAIN_ROIS_PER_IMAGE = 200
 
     # Percent of positive ROIs used to train classifier/mask heads

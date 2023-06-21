@@ -26,13 +26,7 @@ ROOT_DIR = os.path.abspath("../")
 
 # Import Mask RCNN
 sys.path.append(ROOT_DIR)  # To find local version of the library
-from mrcnn import model as modellib, utils
-
-import wandb
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
-
-from tqdm import tqdm
+from mrcnn import utils
 
 ############################################################
 #  Visualization
