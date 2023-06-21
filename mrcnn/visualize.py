@@ -28,6 +28,7 @@ ROOT_DIR = os.path.abspath("../")
 sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn import utils
 
+
 ############################################################
 #  Visualization
 ############################################################
@@ -68,6 +69,7 @@ def random_colors(N, bright=True):
     random.shuffle(colors)
     return colors
 
+
 def apply_mask(image, mask, color, alpha=0.5):
     """Apply the given mask to the image.
     """
@@ -77,6 +79,7 @@ def apply_mask(image, mask, color, alpha=0.5):
                                   (1 - alpha) + alpha * color[c] * 255,
                                   image[:, :, c])
     return image
+
 
 def display_instances(image, boxes, masks, class_ids, class_names,
                       scores=None, title="",
