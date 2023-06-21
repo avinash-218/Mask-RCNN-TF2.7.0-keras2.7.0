@@ -70,11 +70,11 @@ class CustomConfig(Config):
 
     GPU_COUNT = 1
 
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 1
 
-    VALIDATION_STEPS = 20
+    VALIDATION_STEPS = 1
 
     BACKBONE = "resnet101"
 
@@ -128,10 +128,10 @@ class CustomConfig(Config):
 
     IMAGE_MIN_SCALE = 0
 
-    IMAGE_CHANNEL_COUNT = 3
+    IMAGE_CHANNEL_COUNT = 1
 
     # Image mean (RGB)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
+    MEAN_PIXEL = np.array([128.0])
 
     TRAIN_ROIS_PER_IMAGE = 200
 
@@ -531,7 +531,7 @@ if __name__ == '__main__':
     if args.weights.lower() == "coco":
         # Exclude the last layers because they require a matching
         # number of classes
-        model.load_weights(weights_path, by_name=True, exclude=[
+        model.load_weights(weights_path, by_name=True, exclude=['conv1',
             "mrcnn_class_logits", "mrcnn_bbox_fc",
             "mrcnn_bbox", "mrcnn_mask"])
     else:

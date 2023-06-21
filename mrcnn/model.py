@@ -1722,6 +1722,7 @@ class DataGenerator(KU.Sequence):
                 load_image_gt(self.dataset, self.config, image_id,
                               augmentation=self.augmentation)
 
+            gt_masks = gt_masks.astype(np.bool_)
             # Skip images that have no instances. This can happen in cases
             # where we train on a subset of classes and the image doesn't
             # have any of the classes we care about.
