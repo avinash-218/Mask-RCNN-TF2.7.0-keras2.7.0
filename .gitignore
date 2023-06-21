@@ -1,7 +1,5 @@
 # Others
 nohup.out
-*.ipynb
-
 
 # API
 API.json

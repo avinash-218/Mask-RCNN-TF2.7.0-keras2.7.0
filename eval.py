@@ -40,7 +40,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 #  Configurations
 ############################################################
 
-EPOCHS = 100
+EPOCHS = 
 
 class CustomConfig(Config):
     NAME = 'furnitures'  # Override in sub-classes
