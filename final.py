@@ -364,7 +364,7 @@ def train(model):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=EPOCHS,
-                layers='4+',
+                layers='all',
                 custom_callbacks=[early_stopping_callback, wandb_callback])
 
 
