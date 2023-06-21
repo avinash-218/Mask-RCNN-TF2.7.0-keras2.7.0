@@ -1,24 +1,3 @@
-"""
-Mask R-CNN
-Train on the floor plan dataset and implement color splash effect.
-Copyright (c) 2018 Matterport, Inc.
-Licensed under the MIT License (see LICENSE for details)
-Written by Waleed Abdulla
-------------------------------------------------------------
-Usage: import the module (see Jupyter notebooks for examples), or run from
-       the command line as such:
-    # Train a new model starting from pre-trained COCO weights
-    python3 bottle.py train --dataset=/home/datascience/Workspace/maskRcnn/Mask_RCNN-master/samples/bottle/dataset --weights=coco
-    # Resume training a model that you had trained earlier
-    python3 bottle.py train --dataset=/path/to/bottle/dataset --weights=last
-    # Train a new model starting from ImageNet weights
-    python3 bottle.py train --dataset=/path/to/bottle/dataset --weights=imagenet
-    # Apply color splash to an image
-    python3 bottle.py splash --weights=/path/to/weights/file.h5 --image=<URL or path to file>
-    # Apply color splash to video using the last weights you trained
-    python3 bottle.py splash --weights=last --video=<URL or path to file>
-"""
-
 import os
 import sys
 import json
@@ -38,12 +17,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Read the JSON configuration file
-with open('API.json', 'r') as config_file:
+with open('/kaggle/input/furniture/API.json', 'r') as config_file:
     config = json.load(config_file)
 
 # # Retrieve the Wandb API key
-# wandb_api_key = config['wandb_api_key']
-# wandb.login(key=wandb_api_key)
+wandb_api_key = config['wandb_api_key']
+wandb.login(key=wandb_api_key)
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -53,9 +32,6 @@ sys.path.append(ROOT_DIR)  # To find local version of the library
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils, visualize
 
-# Path to trained weights file
-COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
-
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
@@ -63,7 +39,8 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 1
+
+EPOCHS = 100
 
 class CustomConfig(Config):
     NAME = 'furnitures'  # Override in sub-classes
@@ -333,9 +310,94 @@ class CustomDataset(utils.Dataset):
         else:
             super(self.__class__, self).image_reference(image_id)
 
+def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
+    APs = []
+    precisions = []
+    recalls = []
+    f1_scores = []
+    IOUs =[]
+    dices = []
 
-def train(model):
-    """Train the model."""
+    for image_id in tqdm(dataset.image_ids):
+        # Load image, bounding boxes, and masks for the image id
+        image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
+
+        # Convert pixel values (e.g., normalize and resize)
+        scaled_image = modellib.mold_image(image, cfg)
+
+        # Make prediction - detect returns the following:
+        # rois: [N, (y1, x1, y2, x2)] detection bounding boxes
+        # class_ids: [N] int class IDs
+        # scores: [N] float probability scores for the class IDs
+        # masks: [H, W, N] instance binary masks
+        yhat = model.detect([scaled_image])
+
+        # Extract results for the current image
+        r = yhat[0]
+
+        # Calculate statistics, including AP
+        AP, _, _, overlaps = utils.compute_ap(gt_bbox, gt_class_id, gt_mask, r["rois"], r["class_ids"], r["scores"], r['masks'], iou_threshold=iou_threshold)
+        max_iou_per_box = np.max(overlaps, axis=1)
+        average_iou = np.mean(max_iou_per_box)
+
+        # Calculate precision, recall, and F1 score
+        precision, recall, f1_score = utils.compute_precision_recall_f1(r["rois"], gt_bbox, iou_threshold)
+
+        dice = 2*average_iou / (average_iou + 1)
+
+        # Store individual values
+        APs.append(AP)
+        precisions.append(precision)
+        recalls.append(recall)
+        f1_scores.append(f1_score)
+        IOUs.append(average_iou)
+        dices.append(dice)
+
+    # Calculate the mean values
+    mAP = np.mean(APs)
+    precision = np.mean(precisions)
+    recall = np.mean(recalls)
+    f1_score = np.mean(f1_scores)
+    iou = np.mean(IOUs)
+    dice = np.mean(dices)
+
+    return mAP, precision, recall, f1_score, iou, dice
+
+
+class CustomWandbCallback(Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        wandb.log(logs)  # Log the metrics to W&B
+
+if __name__ == '__main__':
+    import argparse
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description='Train Mask R-CNN to detect custom class.')
+    parser.add_argument('--dataset', required=False,
+                        metavar="/path/to/custom/dataset/",
+                        help='Directory of the custom dataset')
+    parser.add_argument('--model_path', required=False,
+                        default=DEFAULT_LOGS_DIR,
+                        metavar="/path/to/model/",
+                        help='saved model path')
+    args = parser.parse_args()
+
+    class InferenceConfig(CustomConfig):
+        # Set batch size to 1 since we'll be running inference on
+        # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
+        GPU_COUNT = 1
+        IMAGES_PER_GPU = 1
+    eval_config = InferenceConfig()
+    eval_config.display()
+
+    myrun = wandb.init(
+                        project='Eval MaskRCNN',#project name
+                        group='Iter1',#set group name
+                        name='Run2',#set run name
+                        resume=False#resume run
+                        )
+
     # Training dataset.
     dataset_train = CustomDataset()
     dataset_train.load_custom(args.dataset, "train")
@@ -346,210 +408,52 @@ def train(model):
     dataset_val.load_custom(args.dataset, "val")
     dataset_val.prepare()
 
-    # Create an EarlyStopping callback
-    early_stopping_callback = EarlyStopping(patience=3, restore_best_weights=True)
-    
-    config = CustomConfig()
-    config_dict = config.to_dict()
-    config_dict['Epochs'] = EPOCHS
+    # Test dataset
+    dataset_test = CustomDataset()
+    dataset_test.load_custom(args.dataset, "test")
+    dataset_test.prepare()
 
-    # Create an Wandb Callback
-    wandb_callback = CustomWandbCallback()
+    # define the model
+    model = modellib.MaskRCNN(mode="inference", model_dir='./logs/', config=eval_config)
 
-    # *** This training schedule is an example. Update to your needs ***
-    # Since we're using a very small dataset, and starting from
-    # COCO trained weights, we don't need to train too long. Also,
-    # no need to train all layers, just the heads should do it.
-    print("Training network heads")
-    model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
-                epochs=EPOCHS,
-                layers='4+',
-                custom_callbacks=[early_stopping_callback, wandb_callback])
+    # load model weights
+    model.load_weights(args.model_path, by_name=True)
 
-
-def color_splash(image, mask):
-    """Apply color splash effect.
-    image: RGB image [height, width, 3]
-    mask: instance segmentation mask [height, width, instance count]
-    Returns result image.
-    """
-    # Make a grayscale copy of the image. The grayscale copy still
-    # has 3 RGB channels, though.
-    gray = skimage.color.gray2rgb(skimage.color.rgb2gray(image)) * 255
-    # We're treating all instances as one, so collapse the mask into one layer
-    mask = (np.sum(mask, -1, keepdims=True) >= 1)
-    # Copy color pixels from the original color image where mask is set
-    if mask.shape[0] > 0:
-        splash = np.where(mask, image, gray).astype(np.uint8)
-    else:
-        splash = gray
-    return splash
-
-
-def detect_and_color_splash(model, image_path=None, video_path=None):
-    assert image_path or video_path
-
-    # Image or video?
-    if image_path:
-        # Run model detection and generate the color splash effect
-        print("Running on {}".format(args.image))
-        # Read image
-        image = skimage.io.imread(args.image)
-        # Detect objects
-        r = model.detect([image], verbose=1)[0]
-        # Color splash
-        splash = color_splash(image, r['masks'])
-        # Save output
-        file_name = "splash_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now())
-        skimage.io.imsave(file_name, splash)
-    elif video_path:
-        import cv2
-        # Video capture
-        vcapture = cv2.VideoCapture(video_path)
-        width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = vcapture.get(cv2.CAP_PROP_FPS)
-
-        # Define codec and create video writer
-        file_name = "splash_{:%Y%m%dT%H%M%S}.avi".format(datetime.datetime.now())
-        vwriter = cv2.VideoWriter(file_name,
-                                  cv2.VideoWriter_fourcc(*'MJPG'),
-                                  fps, (width, height))
-
-        count = 0
-        success = True
-        while success:
-            print("frame: ", count)
-            # Read next image
-            success, image = vcapture.read()
-            if success:
-                # OpenCV returns images as BGR, convert to RGB
-                image = image[..., ::-1]
-                # Detect objects
-                r = model.detect([image], verbose=0)[0]
-                # Color splash
-                splash = color_splash(image, r['masks'])
-                # RGB -> BGR to save image to video
-                splash = splash[..., ::-1]
-                # Add image to video writer
-                vwriter.write(splash)
-                count += 1
-        vwriter.release()
-    print("Saved to ", file_name)
-
-class CustomWandbCallback(Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        wandb.log(logs)  # Log the metrics to W&B
-
-
-if __name__ == '__main__':
-    ############################################################
-    #  Training
-    ############################################################
-    import argparse
-
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(
-        description='Train Mask R-CNN to detect custom class.')
-    parser.add_argument("command",
-                        metavar="<command>",
-                        help="'train' or 'splash'")
-    parser.add_argument('--dataset', required=False,
-                        metavar="/path/to/custom/dataset/",
-                        help='Directory of the custom dataset')
-    parser.add_argument('--weights', required=True,
-                        metavar="/path/to/weights.h5",
-                        help="Path to weights .h5 file or 'coco'")
-    parser.add_argument('--logs', required=False,
-                        default=DEFAULT_LOGS_DIR,
-                        metavar="/path/to/logs/",
-                        help='Logs and checkpoints directory (default=logs/)')
-    parser.add_argument('--image', required=False,
-                        metavar="path or URL to image",
-                        help='Image to apply the color splash effect on')
-    parser.add_argument('--video', required=False,
-                        metavar="path or URL to video",
-                        help='Video to apply the color splash effect on')
-    args = parser.parse_args()
-
-    # Validate arguments
-    if args.command == "train":
-        assert args.dataset, "Argument --dataset is required for training"
-    elif args.command == "splash":
-        assert args.image or args.video,\
-               "Provide --image or --video to apply color splash"
-
-    print("Weights: ", args.weights)
-    print("Dataset: ", args.dataset)
-    print("Logs: ", args.logs)
-
-    # Configurations
-    if args.command == "train":
-        config = CustomConfig()
-    else:
-        class InferenceConfig(CustomConfig):
-            # Set batch size to 1 since we'll be running inference on
-            # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-            GPU_COUNT = 1
-            IMAGES_PER_GPU = 1
-        config = InferenceConfig()
-    config.display()
-
-    myrun = wandb.init(
-                        project='Furniture Segmentation',#project name
-                        group='Test',#set group name
-                        name='Run2',#set run name
-                        resume=False#resume run
-                        )
-
-    # Create model
-    if args.command == "train":
-        model = modellib.MaskRCNN(mode="training", config=config,
-                                  model_dir=args.logs)
-    else:
-        model = modellib.MaskRCNN(mode="inference", config=config,
-                                  model_dir=args.logs)
-
-    # Select weights file to load
-    if args.weights.lower() == "coco":
-        weights_path = COCO_WEIGHTS_PATH
-        # Download weights file
-        if not os.path.exists(weights_path):
-            utils.download_trained_weights(weights_path)
-    elif args.weights.lower() == "last":
-        # Find last trained weights
-        weights_path = model.find_last()[1]
-    elif args.weights.lower() == "imagenet":
-        # Start from ImageNet trained weights
-        weights_path = model.get_imagenet_weights()
-    else:
-        weights_path = args.weights
-
-    # Load weights
-    print("Loading weights ", weights_path)
-    if args.weights.lower() == "coco":
-        # Exclude the last layers because they require a matching
-        # number of classes
-        model.load_weights(weights_path, by_name=True, exclude=[
-            "mrcnn_class_logits", "mrcnn_bbox_fc",
-            "mrcnn_bbox", "mrcnn_mask"])
-    else:
-        model.load_weights(weights_path, by_name=True)
-
-    # Train or evaluate
-    if args.command == "train":
-        train(model)
-    elif args.command == "splash":
-        detect_and_color_splash(model, image_path=args.image,
-                                video_path=args.video)
-    else:
-        print("'{}' is not recognized. "
-              "Use 'train' or 'splash'".format(args.command))
+    # visualize plots
+    print("Logging Sample Visualization Results")
+    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=10)
+    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=10)
+    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=10)
         
-    model_path = './logs/'+ config.NAME + '/furniture_segment.h5'
-    wandb.save(model_path)
+    # # evaluate model on training dataset
+    # print('Evaluating on Train Dataset')
+    # train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
+    # print(f"Train - mAP: {train_mAP:.4f}, Precision: {train_precision:.4f}, Recall: {train_recall:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}, Dice: {train_dice:.4f}")
+
+    # evaluate model on val dataset
+    print('Evaluating on Validation Dataset')
+    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config)
+    print(f"Val - mAP: {val_mAP:.4f}, Precision: {val_precision:.4f}, Recall: {val_recall:.4f}, F1: {val_f1_score:.4f}, IOU: {val_iou:.4f}, Dice: {val_dice:.4f}")
+
+    # evaluate model on test dataset
+    print('Evaluating on Test Dataset')
+    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
+    print(f"Test - mAP: {test_mAP:.4f}, Precision: {test_precision:.4f}, Recall: {test_recall:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}, Dice: {test_dice:.4f}")
+    
+    wandb.log({"Val mAP": val_mAP, "Test mAP": test_mAP,
+            "Val Precision": val_precision, "Test Precision": test_precision,
+            "Val Recall": val_recall, "Test mean Recall": test_recall,
+            "Val F1": val_f1_score, "Test mean F1": test_f1_score,
+            "Val IOU": val_iou, "Test IOU": test_iou,
+            "Val Dice": val_dice, "Test Dice": test_dice})
+
+    # wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
+    #         "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,
+    #         "Train Recall": train_recall, "Val Recall": val_recall, "Test mean Recall": test_recall,
+    #         "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score,
+    #         "Train IOU": train_iou, "Val IOU": val_iou, "Test IOU": test_iou,
+    #         "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
 
     wandb.finish()
 
-# python final.py train --dataset=../dataset/ --weights=coco --logs=./logs
+# python eval.py --dataset=../dataset/ --logs=./logs

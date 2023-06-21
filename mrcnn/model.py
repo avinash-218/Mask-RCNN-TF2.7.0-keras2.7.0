@@ -1208,7 +1208,6 @@ def mrcnn_mask_loss_graph(target_masks, target_class_ids, pred_masks):
                     K.binary_crossentropy(target=y_true, output=y_pred),
                     tf.constant(0.0))
     loss = K.mean(loss)
-
     return loss
 
 
@@ -2188,8 +2187,7 @@ class MaskRCNN(object):
         # Compile
         self.keras_model.compile(
             optimizer=optimizer,
-            loss=[None] * len(self.keras_model.outputs),
-            metrics=[utils.compute_ap_range])
+            loss=[None] * len(self.keras_model.outputs))
 
         # Add metrics for losses
         for name in loss_names:
@@ -2321,7 +2319,7 @@ class MaskRCNN(object):
         # Pre-defined layer regular expressions
         layer_regex = {
             # all layers but the backbone
-            "heads": r"(conv1\_.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
+            "heads": r"(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
             # From a specific Resnet stage and up
             "3+": r"(res3.*)|(bn3.*)|(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
             "4+": r"(res4.*)|(bn4.*)|(res5.*)|(bn5.*)|(mrcnn\_.*)|(rpn\_.*)|(fpn\_.*)",
@@ -2497,7 +2495,8 @@ class MaskRCNN(object):
         masks: [H, W, N] instance binary masks
         """
         assert self.mode == "inference", "Create model in inference mode."
-        assert len(images) == self.config.BATCH_SIZE, "len(images) must be equal to BATCH_SIZE"
+        assert len(
+            images) == self.config.BATCH_SIZE, "len(images) must be equal to BATCH_SIZE"
 
         if verbose:
             log("Processing {} images".format(len(images)))
