@@ -419,12 +419,6 @@ if __name__ == '__main__':
     # load model weights
     model.load_weights(args.model_path, by_name=True)
 
-    # visualize plots
-    print("Logging Sample Visualization Results")
-    visualize.plot_actual_vs_predicted("Train", dataset_train, model, eval_config, n_images=10)
-    visualize.plot_actual_vs_predicted("Val", dataset_val, model, eval_config, n_images=10)
-    visualize.plot_actual_vs_predicted("Test", dataset_test, model, eval_config, n_images=10)
-        
     # # evaluate model on training dataset
     # print('Evaluating on Train Dataset')
     # train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
