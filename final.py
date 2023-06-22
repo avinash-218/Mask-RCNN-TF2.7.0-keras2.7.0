@@ -55,7 +55,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 1
+EPOCHS = 100
 
 class CustomConfig(Config):
     NAME = 'furnitures'  # Override in sub-classes
@@ -64,11 +64,15 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 1
+    STEPS_PER_EPOCH = 100
 
-    VALIDATION_STEPS = 1
+    VALIDATION_STEPS = 20
 
     BACKBONE = "resnet101"
+
+    BACKBONE_STRIDES = [2, 4, 8, 16, 32]
+
+    RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)
 
     # Number of classification classes (including background)
     NUM_CLASSES = 1 + 16 # Override in sub-classes
@@ -81,6 +85,14 @@ class CustomConfig(Config):
 
     # Image mean (RGB)
     MEAN_PIXEL = np.array([128.0])
+
+    MAX_GT_INSTANCES = 50
+
+    DETECTION_MAX_INSTANCES = 50
+
+    DETECTION_MIN_CONFIDENCE = 0.6
+
+    DETECTION_NMS_THRESHOLD = 0.5
 
     # Learning rate and momentum
     # The Mask RCNN paper uses lr=0.02, but on TensorFlow it causes
@@ -414,8 +426,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
-                        group='Test',#set group name
-                        name='Run3',#set run name
+                        group='Iter2',#set group name
+                        name='Run1',#set run name
                         resume=False#resume run
                         )
 
@@ -447,7 +459,7 @@ if __name__ == '__main__':
     if args.weights.lower() == "coco":
         # Exclude the last layers because they require a matching
         # number of classes
-        model.load_weights(weights_path, by_name=True, exclude=['conv1',
+        model.load_weights(weights_path, by_name=True, exclude=['conv1', #added for grayscale
             "mrcnn_class_logits", "mrcnn_bbox_fc",
             "mrcnn_bbox", "mrcnn_mask"])
     else:
