@@ -172,6 +172,8 @@ def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
     IOUs =[]
     dices = []
 
+    disp_cnt = 0
+
     for image_id in tqdm(dataset.image_ids):
         # Load image, bounding boxes, and masks for the image id
         image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
@@ -200,6 +202,10 @@ def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
         # Store individual values
         IOUs.append(average_iou)
         dices.append(dice)
+        disp_cnt+=1
+
+        if(disp_cnt % 10 == 0):
+            print(np.mean(APs), np.mean(ARs), ( (2*np.mean(APs)*np.mean(ARs)) / (np.mean(APs) + np.mean(ARs))))
 
     # Calculate the mean values
     mAP = mean(APs)
