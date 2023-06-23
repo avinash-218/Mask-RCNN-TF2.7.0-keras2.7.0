@@ -249,7 +249,7 @@ if __name__ == '__main__':
     myrun = wandb.init(
                         project='Eval MaskRCNN',#project name
                         group='Iter1',#set group name
-                        name='Run2',#set run name
+                        name='Run1',#set run name
                         resume=False#resume run
                         )
 
@@ -275,30 +275,30 @@ if __name__ == '__main__':
     model.load_weights(args.model_path, by_name=True)
 
     # evaluate model on training dataset
-    print('Evaluating on Train Dataset')
-    train_mAP, train_precision, train_recall, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
-    print(f"Train - mAP: {train_mAP:.4f}, Precision: {train_precision:.4f}, Recall: {train_recall:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}, Dice: {train_dice:.4f}")
+    # print('Evaluating on Train Dataset')
+    # train_mAP, train_mAR, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
+    # print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}, Dice: {train_dice:.4f}")
 
     # evaluate model on val dataset
     print('Evaluating on Validation Dataset')
-    val_mAP, val_precision, val_recall, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config)
-    print(f"Val - mAP: {val_mAP:.4f}, Precision: {val_precision:.4f}, Recall: {val_recall:.4f}, F1: {val_f1_score:.4f}, IOU: {val_iou:.4f}, Dice: {val_dice:.4f}")
+    val_mAP, val_mAR, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config)
+    print(f"Validation - mAP: {val_mAP:.4f}, mAR: {val_mAR:.4f}, F1: {val_f1_score:.4f}, IOU: {val_iou:.4f}, Dice: {val_dice:.4f}")
 
     # evaluate model on test dataset
     print('Evaluating on Test Dataset')
-    test_mAP, test_precision, test_recall, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
-    print(f"Test - mAP: {test_mAP:.4f}, Precision: {test_precision:.4f}, Recall: {test_recall:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}, Dice: {test_dice:.4f}")
+    test_mAP, test_mAR, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
+    print(f"Test - mAP: {test_mAP:.4f}, mAR: {test_mAR:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}, Dice: {test_dice:.4f}")
+
     
     wandb.log({"Val mAP": val_mAP, "Test mAP": test_mAP,
-            "Val Precision": val_precision, "Test Precision": test_precision,
-            "Val Recall": val_recall, "Test mean Recall": test_recall,
+            "Val mAR": val_mAR, "Test mAR": test_mAR,
             "Val F1": val_f1_score, "Test mean F1": test_f1_score,
             "Val IOU": val_iou, "Test IOU": test_iou,
             "Val Dice": val_dice, "Test Dice": test_dice})
 
+
     wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
-            "Train Precision": train_precision, "Val Precision": val_precision, "Test Precision": test_precision,
-            "Train Recall": train_recall, "Val Recall": val_recall, "Test mean Recall": test_recall,
+            "Train mAR": train_mAR, "Val mAR": val_mAR, "Test mAR": test_mAR,
             "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score,
             "Train IOU": train_iou, "Val IOU": val_iou, "Test IOU": test_iou,
             "Train Dice": train_dice, "Val Dice": val_dice, "Test Dice": test_dice})
