@@ -205,12 +205,12 @@ def evaluate_model(dataset, model, cfg, iou_threshold=0.5):
         disp_cnt+=1
 
         if(disp_cnt % 10 == 0):
-            print(np.mean(APs), np.mean(ARs), ( (2*np.mean(APs)*np.mean(ARs)) / (np.mean(APs) + np.mean(ARs))))
+            print(np.mean(APs), np.mean(ARs), (np.mean(F1_scores)))
 
     # Calculate the mean values
-    mAP = mean(APs)
-    mAR = mean(ARs)
-    F1_score = (2 * mAP * mAR)/(mAP + mAR)
+    mAP = np.mean(APs)
+    mAR = np.mean(ARs)
+    F1_score = np.mean(F1_scores)
     iou = np.mean(IOUs)
     dice = np.mean(dices)
 
