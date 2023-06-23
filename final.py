@@ -37,14 +37,6 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
-# Read the JSON configuration file
-with open('API.json', 'r') as config_file:
-    config = json.load(config_file)
-
-# # Retrieve the Wandb API key
-# wandb_api_key = config['wandb_api_key']
-# wandb.login(key=wandb_api_key)
-
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
 
@@ -63,14 +55,14 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 1
+EPOCHS = 100
 
 class CustomConfig(Config):
     NAME = 'furnitures'  # Override in sub-classes
 
     GPU_COUNT = 1
 
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 4
 
     STEPS_PER_EPOCH = 100
 
@@ -178,7 +170,7 @@ class CustomConfig(Config):
     LOSS_WEIGHTS = {
         "rpn_class_loss": 1.,
         "rpn_bbox_loss": 1.,
-        "mrcnn_class_loss": 1.,
+        "mrcnn_class_loss": 2.,
         "mrcnn_bbox_loss": 1.,
         "mrcnn_mask_loss": 1.
     }
@@ -347,7 +339,7 @@ def train(model):
     dataset_val.prepare()
 
     # Create an EarlyStopping callback
-    early_stopping_callback = EarlyStopping(patience=3, restore_best_weights=True)
+    early_stopping_callback = EarlyStopping(patience=5, restore_best_weights=True)
     
     config = CustomConfig()
     config_dict = config.to_dict()
@@ -444,6 +436,15 @@ class CustomWandbCallback(Callback):
 
 
 if __name__ == '__main__':
+        
+    # Read the JSON configuration file
+    with open('API.json', 'r') as config_file:
+        config = json.load(config_file)
+
+    # # Retrieve the Wandb API key
+    wandb_api_key = config['wandb_api_key']
+    wandb.login(key=wandb_api_key)
+
     ############################################################
     #  Training
     ############################################################
@@ -498,8 +499,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
-                        group='Test',#set group name
-                        name='Run2',#set run name
+                        group='Iter2',#set group name
+                        name='Run3',#set run name
                         resume=False#resume run
                         )
 
@@ -533,7 +534,7 @@ if __name__ == '__main__':
         # number of classes
         model.load_weights(weights_path, by_name=True, exclude=[
             "mrcnn_class_logits", "mrcnn_bbox_fc",
-            "mrcnn_bbox", "mrcnn_mask"])
+            "mrcnn_bbox", "mrcnn_mask", "conv1"])
     else:
         model.load_weights(weights_path, by_name=True)
 
