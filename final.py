@@ -55,7 +55,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 100
+EPOCHS = 1
 
 class CustomConfig(Config):
     NAME = 'furnitures'  # Override in sub-classes
@@ -64,9 +64,9 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 5
 
-    VALIDATION_STEPS = 20
+    VALIDATION_STEPS = 2
 
     BACKBONE = "resnet101"
 
@@ -170,7 +170,7 @@ class CustomConfig(Config):
     LOSS_WEIGHTS = {
         "rpn_class_loss": 1.,
         "rpn_bbox_loss": 1.,
-        "mrcnn_class_loss": 2.,
+        "mrcnn_class_loss": 1.,
         "mrcnn_bbox_loss": 1.,
         "mrcnn_mask_loss": 1.
     }
@@ -534,7 +534,7 @@ if __name__ == '__main__':
         # number of classes
         model.load_weights(weights_path, by_name=True, exclude=[
             "mrcnn_class_logits", "mrcnn_bbox_fc",
-            "mrcnn_bbox", "mrcnn_mask", "conv1"])
+            "mrcnn_bbox", "mrcnn_mask"])
     else:
         model.load_weights(weights_path, by_name=True)
 
