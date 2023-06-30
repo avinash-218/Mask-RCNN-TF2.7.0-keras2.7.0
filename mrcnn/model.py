@@ -1050,6 +1050,17 @@ def smooth_l1_loss(y_true, y_pred):
     loss = (less_than_one * 0.5 * diff**2) + (1 - less_than_one) * (diff - 0.5)
     return loss
 
+def Focal_loss(target,rpn_class_logits,CE_loss,gamma=2):
+    #Focal loss for Multi-classification 
+    #FOCAL LOSS = ((1-pt)**gamma) * CE_loss
+    #gamma = tf.convert_to_tensor(gamma, dtype=tf.dtypes.float32)
+    probs = tf.nn.softmax(rpn_class_logits)
+    y_true_rank = target.shape.rank
+    probs = tf.gather(probs, target, axis=-1, batch_dims=0)
+    probs = tf.linalg.diag_part(probs)
+    focal_modulation = (1 - probs) ** gamma
+    FLoss = focal_modulation * CE_loss
+    return FLoss
 
 def rpn_class_loss_graph(rpn_match, rpn_class_logits):
     """RPN anchor classifier loss.
@@ -1072,6 +1083,9 @@ def rpn_class_loss_graph(rpn_match, rpn_class_logits):
     loss = K.sparse_categorical_crossentropy(target=anchor_class,
                                              output=rpn_class_logits,
                                              from_logits=True)
+    # #FOCAL LOSS
+    # loss = Focal_loss(anchor_class, rpn_class_logits, loss)
+
     loss = K.switch(tf.size(input=loss) > 0, K.mean(loss), tf.constant(0.0))
     return loss
 
@@ -1130,6 +1144,12 @@ def mrcnn_class_loss_graph(target_class_ids, pred_class_logits,
     # Loss
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         labels=target_class_ids, logits=pred_class_logits)
+
+    # Focal loss
+    # https://github.com/umbertogriffo/focal-loss-keras/blob/master/losses.py
+    # alpha = 0.25
+    # gamma = 2.0
+    # loss = alpha * K.pow(1 - pred_active, gamma) * loss + K.epsilon()
 
     # Erase losses of predictions of classes that are not in the active
     # classes of the image.
@@ -1207,6 +1227,12 @@ def mrcnn_mask_loss_graph(target_masks, target_class_ids, pred_masks):
     loss = K.switch(tf.size(input=y_true) > 0,
                     K.binary_crossentropy(target=y_true, output=y_pred),
                     tf.constant(0.0))
+
+    # # Focal Loss
+    # alpha = 0.25  # Focal loss balance factor
+    # gamma = 2.0  # Focal loss focusing parameter
+    # loss = alpha * K.pow(1 - y_pred, gamma) * loss + K.epsilon()
+
     loss = K.mean(loss)
     return loss
 
