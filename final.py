@@ -124,7 +124,7 @@ class CustomConfig(Config):
     IMAGE_CHANNEL_COUNT = 3
 
     # Image mean (RGB)
-    MEAN_PIXEL = np.array([123.7, 116.8, 103.9])
+    MEAN_PIXEL = np.array([127.5, 127.5, 127.5])
 
     TRAIN_ROIS_PER_IMAGE = 200
 
@@ -520,4 +520,4 @@ if __name__ == '__main__':
 
     wandb.finish()
 
-# python final.py train --dataset=../dataset/ --weights=coco --logs=./logs
+# python final.py train --dataset=../dataset2/ --weights=coco --logs=./logs
