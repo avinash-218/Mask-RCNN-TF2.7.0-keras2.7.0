@@ -139,7 +139,7 @@ def evaluate_model(dataset, model, cfg, name):
 
     disp_cnt = 0
 
-    for image_id in tqdm(dataset.image_ids):
+    for image_id in tqdm(dataset.image_ids[:5]):
         # Load image, bounding boxes, and masks for the image id
         image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
 
@@ -216,9 +216,9 @@ if __name__ == '__main__':
                         )
 
     # # Training dataset.
-    # dataset_train = CustomDataset()
-    # dataset_train.load_custom(args.dataset, "train")
-    # dataset_train.prepare()
+    dataset_train = CustomDataset()
+    dataset_train.load_custom(args.dataset, "train")
+    dataset_train.prepare()
 
     # Validation dataset
     dataset_val = CustomDataset()
@@ -237,30 +237,23 @@ if __name__ == '__main__':
     model.load_weights(args.model_path, by_name=True)
 
     # evaluate model on training dataset
-    # print('Evaluating on Train Dataset')
-    # train_mAP, train_mAR, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config, "Train")
-    # print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}")
+    print('Evaluating on Train Dataset')
+    train_mAP, train_mAR, train_f1_score = evaluate_model(dataset_train, model, eval_config, "Train")
+    wandb.log({"Train_mAP":train_mAP, "Train_mAR":train_mAR, "Train_F1_Score":train_f1_score})
+    print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}")
 
     # evaluate model on val dataset
     print('Evaluating on Validation Dataset')
-    val_mAP, val_mAR, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config, "Val")
+    val_mAP, val_mAR, val_f1_score = evaluate_model(dataset_val, model, eval_config, "Val")
+    wandb.log({"Val_mAP":val_mAP, "Val_mAR":val_mAR, "Val_F1_Score":val_f1_score})
     print(f"Validation - mAP: {val_mAP:.4f}, mAR: {val_mAR:.4f}, F1: {val_f1_score:.4f}")
 
     # evaluate model on test dataset
     print('Evaluating on Test Dataset')
-    test_mAP, test_mAR, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config, "Test")
+    test_mAP, test_mAR, test_f1_score = evaluate_model(dataset_test, model, eval_config, "Test")
+    wandb.log({"Test_mAP":test_mAP, "Test_mAR":test_mAR, "Test_F1_Score":test_f1_score})
     print(f"Test - mAP: {test_mAP:.4f}, mAR: {test_mAR:.4f}, F1: {test_f1_score:.4f}")
-
     
-    wandb.log({"Val mAP": val_mAP, "Test mAP": test_mAP,
-            "Val mAR": val_mAR, "Test mAR": test_mAR,
-            "Val F1": val_f1_score, "Test mean F1": test_f1_score})
-
-
-    wandb.log({"Train mAP": train_mAP, "Val mAP": val_mAP, "Test mAP": test_mAP,
-            "Train mAR": train_mAR, "Val mAR": val_mAR, "Test mAR": test_mAR,
-            "Train F1": train_f1_score, "Val F1": val_f1_score, "Test mean F1": test_f1_score})
-
     wandb.finish()
 
 # python eval.py --dataset=../dataset2/ --model_path=/kaggle/input/furniture/iter2run4.h5
