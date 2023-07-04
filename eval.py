@@ -178,7 +178,7 @@ class CustomWandbCallback(Callback):
 
 if __name__ == '__main__':
     # Read the JSON configuration file
-    with open('/kaggle/input/furniture/API.json', 'r') as config_file:
+    with open('/kaggle/input/maskrcnn-models/API.json', 'r') as config_file:
         config = json.load(config_file)
 
     # # Retrieve the Wandb API key
