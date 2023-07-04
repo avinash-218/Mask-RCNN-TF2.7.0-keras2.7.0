@@ -132,7 +132,7 @@ class CustomDataset(utils.Dataset):
         else:
             super(self.__class__, self).image_reference(image_id)
 
-def evaluate_model(dataset, model, cfg):
+def evaluate_model(dataset, model, cfg, name):
     APs = []
     ARs = []
     # F1_scores = []
@@ -157,12 +157,12 @@ def evaluate_model(dataset, model, cfg):
         
         disp_cnt+=1
 
-        if(disp_cnt % 1 == 0):
+        if(disp_cnt % 10 == 0):
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             F1_score = (2 * mAP * mAR)/(mAP + mAR)
-            wandb.log({"mAP":mAP, "mAR":mAR, "F1_Score":F1_score})
-            # print(f"{disp_cnt}: AP = {mAP:.4f}, AR = {mAR:.4f}, F1 = {F1_score:.4f}")
+            wandb.log({name+"_mAP":mAP, name+"_mAR":mAR, name+"_F1_Score":F1_score})
+            print(f"{disp_cnt}: {name}_mAP = {mAP:.4f}, {name}_mAR = {mAR:.4f}, {name}_F1_Score = {F1_score:.4f}")
 
 
     # Calculate the mean values
@@ -238,17 +238,17 @@ if __name__ == '__main__':
 
     # evaluate model on training dataset
     # print('Evaluating on Train Dataset')
-    # train_mAP, train_mAR, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config)
+    # train_mAP, train_mAR, train_f1_score, train_iou, train_dice = evaluate_model(dataset_train, model, eval_config, "Train")
     # print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}")
 
     # evaluate model on val dataset
     print('Evaluating on Validation Dataset')
-    val_mAP, val_mAR, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config)
+    val_mAP, val_mAR, val_f1_score, val_iou, val_dice = evaluate_model(dataset_val, model, eval_config, "Val")
     print(f"Validation - mAP: {val_mAP:.4f}, mAR: {val_mAR:.4f}, F1: {val_f1_score:.4f}")
 
     # evaluate model on test dataset
     print('Evaluating on Test Dataset')
-    test_mAP, test_mAR, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config)
+    test_mAP, test_mAR, test_f1_score, test_iou, test_dice = evaluate_model(dataset_test, model, eval_config, "Test")
     print(f"Test - mAP: {test_mAP:.4f}, mAR: {test_mAR:.4f}, F1: {test_f1_score:.4f}")
 
     
