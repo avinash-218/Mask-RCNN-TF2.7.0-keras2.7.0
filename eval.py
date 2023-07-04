@@ -139,7 +139,7 @@ def evaluate_model(dataset, model, cfg, name):
 
     disp_cnt = 0
 
-    for image_id in tqdm(dataset.image_ids[:5]):
+    for image_id in tqdm(dataset.image_ids):
         # Load image, bounding boxes, and masks for the image id
         image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, cfg, image_id)
 
@@ -157,7 +157,7 @@ def evaluate_model(dataset, model, cfg, name):
         
         disp_cnt+=1
 
-        if(disp_cnt % 1 == 0):
+        if(disp_cnt % 20 == 0):
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             F1_score = (2 * mAP * mAR)/(mAP + mAR)
@@ -216,9 +216,9 @@ if __name__ == '__main__':
                         )
 
     # # Training dataset.
-    dataset_train = CustomDataset()
-    dataset_train.load_custom(args.dataset, "train")
-    dataset_train.prepare()
+    # dataset_train = CustomDataset()
+    # dataset_train.load_custom(args.dataset, "train")
+    # dataset_train.prepare()
 
     # Validation dataset
     dataset_val = CustomDataset()
@@ -237,10 +237,10 @@ if __name__ == '__main__':
     model.load_weights(args.model_path, by_name=True)
 
     # evaluate model on training dataset
-    print('Evaluating on Train Dataset')
-    train_mAP, train_mAR, train_f1_score = evaluate_model(dataset_train, model, eval_config, "Train")
-    wandb.log({"Train_mAP":train_mAP, "Train_mAR":train_mAR, "Train_F1_Score":train_f1_score})
-    print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}")
+    # print('Evaluating on Train Dataset')
+    # train_mAP, train_mAR, train_f1_score = evaluate_model(dataset_train, model, eval_config, "Train")
+    # wandb.log({"Train_mAP":train_mAP, "Train_mAR":train_mAR, "Train_F1_Score":train_f1_score})
+    # print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}")
 
     # evaluate model on val dataset
     print('Evaluating on Validation Dataset')
