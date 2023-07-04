@@ -157,7 +157,7 @@ def evaluate_model(dataset, model, cfg, name):
         
         disp_cnt+=1
 
-        if(disp_cnt % 10 == 0):
+        if(disp_cnt % 1 == 0):
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             F1_score = (2 * mAP * mAR)/(mAP + mAR)
