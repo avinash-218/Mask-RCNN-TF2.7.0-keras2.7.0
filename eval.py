@@ -157,11 +157,12 @@ def evaluate_model(dataset, model, cfg):
         
         disp_cnt+=1
 
-        if(disp_cnt % 10 == 0):
+        if(disp_cnt % 1 == 0):
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             F1_score = (2 * mAP * mAR)/(mAP + mAR)
-            print(f"{disp_cnt}: AP = {mAP:.4f}, AR = {mAR:.4f}, F1 = {F1_score:.4f}")
+            wandb.log({"mAP":mAP, "mAR":mAR, "F1_Score":F1_score})
+            # print(f"{disp_cnt}: AP = {mAP:.4f}, AR = {mAR:.4f}, F1 = {F1_score:.4f}")
 
 
     # Calculate the mean values
