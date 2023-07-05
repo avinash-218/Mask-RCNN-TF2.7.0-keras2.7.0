@@ -65,9 +65,9 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 5
 
-    VALIDATION_STEPS = 20
+    VALIDATION_STEPS = 2
 
     BACKBONE = "resnet101"
 
@@ -84,47 +84,14 @@ class CustomConfig(Config):
     # Number of classification classes (including background)
     NUM_CLASSES = 1 + 16 # Override in sub-classes
 
-    # Length of square anchor side in pixels
-    RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)
-
-    # Ratios of anchors at each cell (width/height)
-    # A value of 1 represents a square anchor, and 0.5 is a wide anchor
-    RPN_ANCHOR_RATIOS = [0.5, 1, 2]
-
-    # Anchor stride
-    # If 1 then anchors are created for each cell in the backbone feature map.
-    # If 2, then anchors are created for every other cell, and so on.
-    RPN_ANCHOR_STRIDE = 1
-
-    # Non-max suppression threshold to filter RPN proposals.
-    # You can increase this during training to generate more propsals.
-    RPN_NMS_THRESHOLD = 0.7
-
-    # How many anchors per image to use for RPN training
-    RPN_TRAIN_ANCHORS_PER_IMAGE = 256
-    
-    # ROIs kept after tf.nn.top_k and before non-maximum suppression
-    PRE_NMS_LIMIT = 6000
-
-    # ROIs kept after non-maximum suppression (training and inference)
-    POST_NMS_ROIS_TRAINING = 2000
-    POST_NMS_ROIS_INFERENCE = 1000
-
-    # If enabled, resizes instance masks to a smaller size to reduce
-    # memory load. Recommended when using high-resolution images.
-    USE_MINI_MASK = False
-    MINI_MASK_SHAPE = (56, 56)  # (height, width) of the mini-mask
-
     IMAGE_RESIZE_MODE = "square"
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
 
-    IMAGE_MIN_SCALE = 0
-
     IMAGE_CHANNEL_COUNT = 3
 
     # Image mean (RGB)
-    MEAN_PIXEL = np.array([127.5, 127.5, 127.5])
+    MEAN_PIXEL = np.array([127.5])
 
     TRAIN_ROIS_PER_IMAGE = 200
 
@@ -466,8 +433,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
-                        group='Iter2',#set group name
-                        name='Run4',#set run name
+                        group= grp_name,#set group name
+                        name= run_name,#set run name
                         resume=False#resume run
                         )
 
@@ -515,9 +482,10 @@ if __name__ == '__main__':
         print("'{}' is not recognized. "
               "Use 'train' or 'splash'".format(args.command))
         
-    model_path = './logs/'+ config.NAME + '/furniture_segment.h5'
+    model_path = args.logs + config.NAME + '/' + grp_name + '_' + run_name
     wandb.save(model_path)
 
     wandb.finish()
 
 # python final.py train --dataset=../dataset2/ --weights=coco --logs=./logs
+# python final.py train --dataset=../dataset2/ --weights=../model_saves/iter2run4.h5 --logs=./logs

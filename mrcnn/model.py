@@ -2105,6 +2105,7 @@ class MaskRCNN(object):
             The path of the last checkpoint file
         """
         # Get directory names. Each directory corresponds to a model
+        print(self.model_dir)
         dir_names = next(os.walk(self.model_dir))[1]
         key = self.config.NAME.lower()
         dir_names = filter(lambda f: f.startswith(key), dir_names)
@@ -2301,8 +2302,7 @@ class MaskRCNN(object):
         # self.checkpoint_path = os.path.join(self.log_dir, "mask_rcnn_{}_*epoch*.h5".format(
         #    self.config.NAME.lower()))
 
-        self.checkpoint_path = os.path.join(self.log_dir, "furniture_segment.h5".format(
-            self.config.NAME.lower()))
+        self.checkpoint_path = os.path.join(self.log_dir, "{}.h5".format(self.config.NAME.lower()))
         
         # self.checkpoint_path = self.checkpoint_path.replace(
         #    "*epoch*", "{epoch:04d}")
