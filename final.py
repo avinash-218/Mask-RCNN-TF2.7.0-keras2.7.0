@@ -56,7 +56,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 1
+EPOCHS = 100
 
 class CustomConfig(Config):
     NAME = 'furnitures'  # Override in sub-classes
@@ -65,9 +65,9 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 5
+    STEPS_PER_EPOCH = 100
 
-    VALIDATION_STEPS = 2
+    VALIDATION_STEPS = 20
 
     BACKBONE = "resnet101"
 
@@ -467,7 +467,7 @@ if __name__ == '__main__':
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
                         group='Iter2',#set group name
-                        name='Run3',#set run name
+                        name='Run4',#set run name
                         resume=False#resume run
                         )
 
