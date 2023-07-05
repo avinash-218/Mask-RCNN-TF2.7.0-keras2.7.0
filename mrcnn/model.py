@@ -1083,7 +1083,7 @@ def rpn_class_loss_graph(rpn_match, rpn_class_logits):
     loss = K.sparse_categorical_crossentropy(target=anchor_class,
                                              output=rpn_class_logits,
                                              from_logits=True)
-    #FOCAL LOSS
+    # #FOCAL LOSS
     loss = Focal_loss(anchor_class, rpn_class_logits, loss)
 
     loss = K.switch(tf.size(input=loss) > 0, K.mean(loss), tf.constant(0.0))
@@ -1146,9 +1146,10 @@ def mrcnn_class_loss_graph(target_class_ids, pred_class_logits,
         labels=target_class_ids, logits=pred_class_logits)
 
     # Focal loss
-    alpha = 0.25
-    gamma = 2.0
-    loss = alpha * K.pow(1 - pred_active, gamma) * loss + K.epsilon()
+    # https://github.com/umbertogriffo/focal-loss-keras/blob/master/losses.py
+    # alpha = 0.25
+    # gamma = 2.0
+    # loss = alpha * K.pow(1 - pred_active, gamma) * loss + K.epsilon()
 
     # Erase losses of predictions of classes that are not in the active
     # classes of the image.
@@ -1228,9 +1229,9 @@ def mrcnn_mask_loss_graph(target_masks, target_class_ids, pred_masks):
                     tf.constant(0.0))
 
     # # Focal Loss
-    alpha = 0.25  # Focal loss balance factor
-    gamma = 2.0  # Focal loss focusing parameter
-    loss = alpha * K.pow(1 - y_pred, gamma) * loss + K.epsilon()
+    # alpha = 0.25  # Focal loss balance factor
+    # gamma = 2.0  # Focal loss focusing parameter
+    # loss = alpha * K.pow(1 - y_pred, gamma) * loss + K.epsilon()
 
     loss = K.mean(loss)
     return loss
@@ -1348,7 +1349,7 @@ def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
     masks: [TRAIN_ROIS_PER_IMAGE, height, width, NUM_CLASSES). Class specific masks cropped
            to bbox boundaries and resized to neural network output size.
     """
-    gt_masks = gt_masks.astype(np.bool_)
+    # gt_masks = gt_masks.astype(np.bool_)
     assert rpn_rois.shape[0] > 0
     assert gt_class_ids.dtype == np.int32, "Expected int but got {}".format(
         gt_class_ids.dtype)
@@ -2104,6 +2105,7 @@ class MaskRCNN(object):
             The path of the last checkpoint file
         """
         # Get directory names. Each directory corresponds to a model
+        print(self.model_dir)
         dir_names = next(os.walk(self.model_dir))[1]
         key = self.config.NAME.lower()
         dir_names = filter(lambda f: f.startswith(key), dir_names)
@@ -2299,9 +2301,7 @@ class MaskRCNN(object):
         
         # self.checkpoint_path = os.path.join(self.log_dir, "mask_rcnn_{}_*epoch*.h5".format(
         #    self.config.NAME.lower()))
-
-        self.checkpoint_path = os.path.join(self.log_dir, "furniture_segment.h5".format(
-            self.config.NAME.lower()))
+        self.checkpoint_path = os.path.join(self.model_dir, self.config.NAME.lower(), "{}.h5".format(self.config.NAME.lower()))
         
         # self.checkpoint_path = self.checkpoint_path.replace(
         #    "*epoch*", "{epoch:04d}")

@@ -56,24 +56,22 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 1
+EPOCHS = 100
+grp_name = 'Iter3'
+run_name = 'Run4.1'
 
 class CustomConfig(Config):
-    NAME = 'furnitures'  # Override in sub-classes
+    NAME = grp_name + '_' + run_name  # Override in sub-classes
 
     GPU_COUNT = 1
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 5
+    STEPS_PER_EPOCH = 100
 
-    VALIDATION_STEPS = 2
+    VALIDATION_STEPS = 20
 
     BACKBONE = "resnet101"
-
-    BACKBONE_STRIDES = [2, 4, 8, 16, 32]
-
-    RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)
 
     # Number of classification classes (including background)
     NUM_CLASSES = 1 + 16 # Override in sub-classes
@@ -86,34 +84,6 @@ class CustomConfig(Config):
 
     # Image mean (RGB)
     MEAN_PIXEL = np.array([127.5])
-
-    MAX_GT_INSTANCES = 50
-
-    DETECTION_MAX_INSTANCES = 50
-
-    DETECTION_MIN_CONFIDENCE = 0.6
-
-    DETECTION_NMS_THRESHOLD = 0.5
-
-    # Learning rate and momentum
-    # The Mask RCNN paper uses lr=0.02, but on TensorFlow it causes
-    # weights to explode. Likely due to differences in optimizer
-    # implementation.
-    LEARNING_RATE = 0.001
-    LEARNING_MOMENTUM = 0.9
-
-    # Weight decay regularization
-    WEIGHT_DECAY = 0.0001
-
-    # Loss weights for more precise optimization.
-    # Can be used for R-CNN training setup.
-    LOSS_WEIGHTS = {
-        "rpn_class_loss": 1.,
-        "rpn_bbox_loss": 1.,
-        "mrcnn_class_loss": 1.,
-        "mrcnn_bbox_loss": 1.,
-        "mrcnn_mask_loss": 1.
-    }
 
 ############################################################
 #  Dataset
@@ -380,14 +350,6 @@ if __name__ == '__main__':
     print("Dataset: ", args.dataset)
     print("Logs: ", args.logs)
 
-    # Read the JSON configuration file
-    with open('API.json', 'r') as config_file:
-        config = json.load(config_file)
-
-    # # Retrieve the Wandb API key
-    wandb_api_key = config['wandb_api_key']
-    wandb.login(key=wandb_api_key)
-
     # Configurations
     if args.command == "train":
         config = CustomConfig()
@@ -402,8 +364,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Furniture Segmentation',#project name
-                        group='Iter2',#set group name
-                        name='Run1',#set run name
+                        group= grp_name,#set group name
+                        name= run_name,#set run name
                         resume=False#resume run
                         )
 
@@ -451,9 +413,10 @@ if __name__ == '__main__':
         print("'{}' is not recognized. "
               "Use 'train' or 'splash'".format(args.command))
         
-    model_path = './logs/'+ config.NAME + '/furniture_segment.h5'
+    model_path = os.path.join(args.logs, config.NAME, "{}.h5".format(config.NAME)).lower()
     wandb.save(model_path)
 
     wandb.finish()
 
 # python final.py train --dataset=../dataset2/ --weights=coco --logs=./logs
+# python final.py train --dataset=../dataset2/ --weights=../model_saves/iter2run4.h5 --logs=./logs
