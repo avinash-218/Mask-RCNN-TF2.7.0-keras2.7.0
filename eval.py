@@ -135,7 +135,7 @@ class CustomDataset(utils.Dataset):
 def evaluate_model(dataset, model, cfg, name):
     APs = []
     ARs = []
-    # F1_scores = []
+    IOUs = []
 
     disp_cnt = 0
 
@@ -153,7 +153,10 @@ def evaluate_model(dataset, model, cfg, name):
         AR, _ = utils.compute_recall(r["rois"], gt_bbox, iou=0.5)
         APs.append(AP)
         ARs.append(AR)
-        # F1_scores.append((2* (np.mean(precisions) * np.mean(recalls)))/(np.mean(precisions) + np.mean(recalls)))
+
+        max_iou_per_box = np.max(overlaps, axis=1)
+        average_iou = np.mean(max_iou_per_box)
+        IOUs.append(average_iou)
         
         disp_cnt+=1
 
@@ -161,16 +164,17 @@ def evaluate_model(dataset, model, cfg, name):
             mAP = np.mean(APs)
             mAR = np.mean(ARs)
             F1_score = (2 * mAP * mAR)/(mAP + mAR)
-            wandb.log({name+"_mAP":mAP, name+"_mAR":mAR, name+"_F1_Score":F1_score})
-            print(f"{disp_cnt}: {name}_mAP = {mAP:.4f}, {name}_mAR = {mAR:.4f}, {name}_F1_Score = {F1_score:.4f}")
-
+            iou_score = np.mean(IOUs)
+            wandb.log({name+"_mAP":mAP, name+"_mAR":mAR, name+"_F1_Score":F1_score, name+"_IOU":iou_score})
+            print(f"{disp_cnt}: {name}_mAP = {mAP:.4f}, {name}_mAR = {mAR:.4f}, {name}_F1_Score = {F1_score:.4f}, {name}_IOU = {iou_score:.4f}")
 
     # Calculate the mean values
     mAP = np.mean(APs)
     mAR = np.mean(ARs)
     F1_score = (2 * mAP * mAR)/(mAP + mAR)
+    iou_score = np.mean(IOUs)
 
-    return mAP, mAR, F1_score
+    return mAP, mAR, F1_score, iou_score
 
 
 class CustomWandbCallback(Callback):
@@ -210,8 +214,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Eval MaskRCNN',#project name
-                        group='Iter2',#set group name
-                        name='Run4',#set run name
+                        group='Iter3',#set group name
+                        name='Run4.1',#set run name
                         resume=False#resume run
                         )
 
@@ -238,21 +242,21 @@ if __name__ == '__main__':
 
     # evaluate model on training dataset
     # print('Evaluating on Train Dataset')
-    # train_mAP, train_mAR, train_f1_score = evaluate_model(dataset_train, model, eval_config, "Train")
-    # wandb.log({"Train_mAP":train_mAP, "Train_mAR":train_mAR, "Train_F1_Score":train_f1_score})
-    # print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}")
+    # train_mAP, train_mAR, train_f1_score, train_iou = evaluate_model(dataset_train, model, eval_config, "Train")
+    # wandb.log({"Train_mAP":train_mAP, "Train_mAR":train_mAR, "Train_F1_Score":train_f1_score, "Train_IOU": train_iou})
+    # print(f"Train - mAP: {train_mAP:.4f}, mAR: {train_mAR:.4f}, F1: {train_f1_score:.4f}, IOU: {train_iou:.4f}")
 
     # evaluate model on val dataset
     print('Evaluating on Validation Dataset')
-    val_mAP, val_mAR, val_f1_score = evaluate_model(dataset_val, model, eval_config, "Val")
-    wandb.log({"Val_mAP":val_mAP, "Val_mAR":val_mAR, "Val_F1_Score":val_f1_score})
-    print(f"Validation - mAP: {val_mAP:.4f}, mAR: {val_mAR:.4f}, F1: {val_f1_score:.4f}")
+    val_mAP, val_mAR, val_f1_score, val_iou = evaluate_model(dataset_val, model, eval_config, "Val")
+    wandb.log({"Val_mAP":val_mAP, "Val_mAR":val_mAR, "Val_F1_Score":val_f1_score, "Val_IOU": val_iou})
+    print(f"Validation - mAP: {val_mAP:.4f}, mAR: {val_mAR:.4f}, F1: {val_f1_score:.4f}, IOU: {val_iou:.4f}")
 
     # evaluate model on test dataset
     print('Evaluating on Test Dataset')
-    test_mAP, test_mAR, test_f1_score = evaluate_model(dataset_test, model, eval_config, "Test")
-    wandb.log({"Test_mAP":test_mAP, "Test_mAR":test_mAR, "Test_F1_Score":test_f1_score})
-    print(f"Test - mAP: {test_mAP:.4f}, mAR: {test_mAR:.4f}, F1: {test_f1_score:.4f}")
+    test_mAP, test_mAR, test_f1_score, test_iou = evaluate_model(dataset_test, model, eval_config, "Test")
+    wandb.log({"Test_mAP":test_mAP, "Test_mAR":test_mAR, "Test_F1_Score":test_f1_score, "Test_IOU": test_iou})
+    print(f"Test - mAP: {test_mAP:.4f}, mAR: {test_mAR:.4f}, F1: {test_f1_score:.4f}, IOU: {test_iou:.4f}")
     
     wandb.finish()
 

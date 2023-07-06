@@ -909,19 +909,3 @@ def resize(image, output_shape, order=1, mode='constant', cval=0, clip=True,
             image, output_shape,
             order=order, mode=mode, cval=cval, clip=clip,
             preserve_range=preserve_range)
-    
-## Custom Evaluation Metrics
-
-def compute_precision_recall_f1(pred_boxes, gt_boxes, iou_threshold=0.5):
-    """Compute precision, recall, and F1 score by thresholding the IoU."""
-    recall, positive_ids = compute_recall(pred_boxes, gt_boxes, iou_threshold)
-    
-    tp = len(positive_ids)
-    fp = len(pred_boxes) - tp
-    fn = gt_boxes.shape[0] - tp
-    
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-    # recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
-    
-    return precision, recall, f1_score
