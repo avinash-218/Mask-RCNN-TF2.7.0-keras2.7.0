@@ -58,7 +58,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 EPOCHS = 100
 grp_name = 'Iter3'
-run_name = 'Run4.1'
+run_name = 'Run4.2g'
 
 class CustomConfig(Config):
     NAME = grp_name + '_' + run_name  # Override in sub-classes
