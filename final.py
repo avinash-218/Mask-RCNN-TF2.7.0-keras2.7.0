@@ -58,7 +58,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 EPOCHS = 100
 grp_name = 'Iter3'
-run_name = 'Run4.1'
+run_name = 'Run4.1.1'
 
 class CustomConfig(Config):
     NAME = grp_name + '_' + run_name  # Override in sub-classes
@@ -67,14 +67,18 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 200
 
-    VALIDATION_STEPS = 20
+    VALIDATION_STEPS = 30
 
     BACKBONE = "resnet101"
 
     # Number of classification classes (including background)
     NUM_CLASSES = 1 + 16 # Override in sub-classes
+
+    RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)
+
+    RPN_NMS_THRESHOLD = 0.85
 
     IMAGE_RESIZE_MODE = "square"
     IMAGE_MIN_DIM = 512
@@ -85,6 +89,19 @@ class CustomConfig(Config):
     # Image mean (RGB)
     MEAN_PIXEL = np.array([127.5, 127.5, 127.5])
 
+    MAX_GT_INSTANCES = 50
+
+    DETECTION_MIN_CONFIDENCE = 0.85
+
+    DETECTION_NMS_THRESHOLD = 0.8
+
+    LOSS_WEIGHTS = {
+        "rpn_class_loss": 1.,
+        "rpn_bbox_loss": 1.,
+        "mrcnn_class_loss": 1.,
+        "mrcnn_bbox_loss": 1.,
+        "mrcnn_mask_loss": 1.
+    }
 ############################################################
 #  Dataset
 ############################################################
@@ -216,7 +233,7 @@ def train(model):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=EPOCHS,
-                layers='all',
+                layers='heads',
                 custom_callbacks=[early_stopping_callback, wandb_callback])
 
 
