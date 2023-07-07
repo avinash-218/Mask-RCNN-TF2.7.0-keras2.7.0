@@ -23,6 +23,7 @@ from tensorflow.python.eager import context
 import tensorflow.keras.models as KM
 
 from mrcnn import utils
+from mrcnn import optimizer
 import sys
 from mrcnn.parallel_model import ParallelModel
 
@@ -2188,9 +2189,10 @@ class MaskRCNN(object):
         metrics. Then calls the Keras compile() function.
         """
         # Optimizer object
-        optimizer = keras.optimizers.SGD(
-            learning_rate=learning_rate, momentum=momentum,
-            clipnorm=self.config.GRADIENT_CLIP_NORM)
+        # optimizer = keras.optimizers.SGD(
+        #     learning_rate=learning_rate, momentum=momentum,
+        #     clipnorm=self.config.GRADIENT_CLIP_NORM)
+        optimizer = optimizer.RAdam()
         # Add Losses
         loss_names = [
             "rpn_class_loss",  "rpn_bbox_loss",
