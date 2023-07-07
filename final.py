@@ -56,7 +56,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 100
+EPOCHS = 3
 grp_name = 'Iter3'
 run_name = 'Run4.1'
 
@@ -67,9 +67,9 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 5
 
-    VALIDATION_STEPS = 20
+    VALIDATION_STEPS = 2
 
     BACKBONE = "resnet101"
 
