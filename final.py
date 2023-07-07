@@ -56,9 +56,9 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 #  Configurations
 ############################################################
-EPOCHS = 3
-grp_name = 'Iter3'
-run_name = 'Run4.1'
+EPOCHS = 100
+grp_name = 'Radam'
+run_name = 'Run1'
 
 class CustomConfig(Config):
     NAME = grp_name + '_' + run_name  # Override in sub-classes
@@ -67,9 +67,9 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 5
+    STEPS_PER_EPOCH = 100
 
-    VALIDATION_STEPS = 2
+    VALIDATION_STEPS = 20
 
     BACKBONE = "resnet101"
 
