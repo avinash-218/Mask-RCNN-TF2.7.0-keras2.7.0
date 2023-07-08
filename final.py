@@ -58,7 +58,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 EPOCHS = 100
 grp_name = 'Iter3'
-run_name = 'Run4.1'
+run_name = 'Run1'
 
 class CustomConfig(Config):
     NAME = grp_name + '_' + run_name  # Override in sub-classes
@@ -67,7 +67,7 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 1000
 
     VALIDATION_STEPS = 20
 
@@ -199,7 +199,7 @@ def train(model):
     dataset_val.prepare()
 
     # Create an EarlyStopping callback
-    early_stopping_callback = EarlyStopping(patience=5, restore_best_weights=True)
+    early_stopping_callback = EarlyStopping(patience=3, restore_best_weights=True)
     
     config = CustomConfig()
     config_dict = config.to_dict()
