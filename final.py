@@ -57,8 +57,8 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 #  Configurations
 ############################################################
 EPOCHS = 100
-grp_name = 'Iter3'
-run_name = 'Run1'
+grp_name = 'Iter4'
+run_name = 'Run2'
 
 class CustomConfig(Config):
     NAME = grp_name + '_' + run_name  # Override in sub-classes
@@ -67,7 +67,7 @@ class CustomConfig(Config):
 
     IMAGES_PER_GPU = 4
 
-    STEPS_PER_EPOCH = 1000
+    STEPS_PER_EPOCH = 100
 
     VALIDATION_STEPS = 20
 
@@ -77,8 +77,8 @@ class CustomConfig(Config):
     NUM_CLASSES = 1 + 16 # Override in sub-classes
 
     IMAGE_RESIZE_MODE = "square"
-    IMAGE_MIN_DIM = 512
-    IMAGE_MAX_DIM = 512
+    IMAGE_MIN_DIM = 1024
+    IMAGE_MAX_DIM = 1024
 
     IMAGE_CHANNEL_COUNT = 3
 
@@ -199,7 +199,7 @@ def train(model):
     dataset_val.prepare()
 
     # Create an EarlyStopping callback
-    early_stopping_callback = EarlyStopping(patience=3, restore_best_weights=True)
+    early_stopping_callback = EarlyStopping(patience=5, restore_best_weights=True)
     
     config = CustomConfig()
     config_dict = config.to_dict()

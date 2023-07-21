@@ -214,8 +214,8 @@ if __name__ == '__main__':
 
     myrun = wandb.init(
                         project='Eval MaskRCNN',#project name
-                        group='Iter3',#set group name
-                        name='Run4.1',#set run name
+                        group='Iter4',#set group name
+                        name='Run1',#set run name
                         resume=False#resume run
                         )
 
